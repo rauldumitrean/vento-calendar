@@ -1,4 +1,5 @@
 // auth.ts — Node.js Runtime only (NOT imported by middleware)
+// Adds Credentials provider, bcryptjs and nodemailer audit events.
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { neon } from "@neondatabase/serverless";
@@ -40,6 +41,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   events: {
     async signIn({ user }) {
       if (user?.id) {
+        // Dynamic import to avoid Edge Runtime issues
         const { logAuditEvent } = await import("@/lib/audit");
         await logAuditEvent({ userId: user.id, action: "login", metadata: { email: user.email } }).catch(console.error);
       }

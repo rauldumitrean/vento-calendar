@@ -24,5 +24,5 @@ export const authConfig: NextAuthConfig = {
     },
   },
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
-  providers: [],
+  providers: [], // Credentials added in auth.ts (Node.js only)
 };

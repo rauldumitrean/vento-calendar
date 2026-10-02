@@ -33,7 +33,7 @@ export const calendarEvents = pgTable("calendar_events", {
 });
 
 // ── Event Invites ──────────────────────────────────────────────────────────
-export const eventInvites = pgTable("calendar_event_invites", {
+export const eventInvites = pgTable("event_invites", {
   id: text("id").primaryKey().$defaultFn(() => createId()),
   eventId: text("event_id").notNull().references(() => calendarEvents.id, { onDelete: "cascade" }),
   inviteeId: text("invitee_id").notNull(),
@@ -78,5 +78,18 @@ export const auditLogs = pgTable("calendar_audit_logs", {
   metadata: json("metadata"),
   ip: text("ip"),
   userAgent: text("user_agent"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// -- Schedules ----------------------------------------------------------
+export const schedules = pgTable("calendar_schedules", {
+  id: text("id").primaryKey().$defaultFn(() => createId()),
+  userId: text("user_id").notNull(),
+  title: text("title").notNull(),
+  dayOfWeek: integer("day_of_week").notNull(),
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time").notNull(),
+  location: text("location"),
+  color: text("color").notNull().default("blue"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
