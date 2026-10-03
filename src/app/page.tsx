@@ -29,8 +29,8 @@ export default function LandingPage() {
       {/* Navbar */}
       <header className="relative z-50 pt-6 px-6 lg:px-8 max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-            <CalendarDays className="w-5 h-5 text-white" />
+          <div className="w-12 h-12 flex items-center justify-center">
+            <img src="/ventoo-calendar-logo.svg" alt="Ventoo Logo" className="w-full h-full object-contain" />
           </div>
           <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
             Ventoo Calendar
