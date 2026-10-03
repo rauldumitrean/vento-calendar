@@ -1,0 +1,32 @@
+﻿<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Hollow Purple Cloud -->
+  <path d="M135,370 L350,370 C388,370 420,338 420,300 C420,265 395,236 362,231 C352,165 298,120 230,120 C175,120 128,155 110,205 C70,210 40,245 40,285 C40,332 78,370 125,370 Z" fill="none" stroke="#7c3aed" stroke-width="32" stroke-linejoin="round" stroke-linecap="round" />
+
+  <!-- Calendar Icon Bottom Right -->
+  <g transform="translate(260, 200) scale(1.6)">
+    <!-- Base background (white to block out cloud line behind it) -->
+    <rect x="20" y="30" width="100" height="90" rx="16" fill="white" />
+    
+    <!-- Header -->
+    <path d="M20,55 L120,55 L120,46 C120,37.2 112.8,30 104,30 L36,30 C27.2,30 20,37.2 20,46 L20,55 Z" fill="#7c3aed" />
+    
+    <!-- Base border -->
+    <rect x="20" y="30" width="100" height="90" rx="16" fill="none" stroke="#e2e8f0" stroke-width="4" />
+    
+    <!-- Binder Rings -->
+    <!-- Left Ring -->
+    <rect x="40" y="15" width="10" height="25" rx="5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3" />
+    <circle cx="45" cy="35" r="3" fill="#334155" />
+    <!-- Right Ring -->
+    <rect x="90" y="15" width="10" height="25" rx="5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3" />
+    <circle cx="95" cy="35" r="3" fill="#334155" />
+
+    <!-- Grid Lines -->
+    <line x1="22" y1="75" x2="118" y2="75" stroke="#e2e8f0" stroke-width="2" />
+    <line x1="22" y1="95" x2="118" y2="95" stroke="#e2e8f0" stroke-width="2" />
+    
+    <line x1="45" y1="57" x2="45" y2="118" stroke="#e2e8f0" stroke-width="2" />
+    <line x1="70" y1="57" x2="70" y2="118" stroke="#e2e8f0" stroke-width="2" />
+    <line x1="95" y1="57" x2="95" y2="118" stroke="#e2e8f0" stroke-width="2" />
+  </g>
+</svg>
