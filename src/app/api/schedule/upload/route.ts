@@ -3,10 +3,12 @@ import { db } from "@/lib/db";
 import { schedules } from "@/lib/db/schema";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, nextSaturday, nextSunday, setHours, setMinutes, parse } from "date-fns";
 
+// Use gemini-1.5-flash which supports PDF inline data
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+export const maxDuration = 60; // Allow up to 60s for AI processing
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -15,93 +17,137 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
-    
-    if (!file || file.type !== "application/pdf") {
+
+    if (!file) {
+      return NextResponse.json({ error: "No se ha enviado ningún archivo" }, { status: 400 });
+    }
+
+    if (file.type !== "application/pdf") {
       return NextResponse.json({ error: "Por favor sube un archivo PDF válido" }, { status: 400 });
     }
 
+    // Convert file to base64
     const arrayBuffer = await file.arrayBuffer();
     const base64Data = Buffer.from(arrayBuffer).toString("base64");
 
-    const prompt = `Eres un asistente que extrae horarios escolares o universitarios.
-Analiza este documento PDF y extrae todas las clases/asignaturas.
-Devuelve EXACTAMENTE un JSON array válido con este formato:
+    const prompt = `Eres un experto en análisis de horarios académicos escolares y universitarios.
+Analiza el PDF adjunto y extrae TODAS las clases/asignaturas que encuentres en el horario.
+Presta atención a tablas, grillas de horario, o listas de clases.
+
+Devuelve ÚNICAMENTE un array JSON válido con este formato exacto (sin markdown, sin comentarios, sin explicaciones):
 [
   {
     "title": "Nombre de la Asignatura",
-    "dayOfWeek": 1, // 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 0=Domingo
-    "startTime": "HH:mm", // formato 24h
-    "endTime": "HH:mm", // formato 24h
-    "location": "Aula o ubicacion (o null)"
+    "dayOfWeek": 1,
+    "startTime": "09:00",
+    "endTime": "10:30",
+    "location": "Aula 101"
   }
 ]
-Si no encuentras ningún horario válido, devuelve un array vacío []. NO devuelvas markdown, SOLO JSON.`;
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: "application/pdf"
-        }
-      }
-    ]);
+Reglas:
+- dayOfWeek: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 0=Domingo
+- startTime y endTime en formato HH:mm (24h)
+- location puede ser null si no se especifica
+- Si la misma asignatura aparece varios días, crea una entrada por cada día
+- Si no encuentras ningún horario válido, devuelve: []
+- SOLO devuelve el JSON array, nada más`;
 
-    const responseText = result.response.text().trim();
+    let responseText = "";
+    try {
+      const result = await model.generateContent([
+        {
+          inlineData: {
+            data: base64Data,
+            mimeType: "application/pdf",
+          },
+        },
+        prompt,
+      ]);
+      responseText = result.response.text().trim();
+    } catch (aiError: any) {
+      console.error("Error llamando a Gemini:", aiError?.message ?? aiError);
+      return NextResponse.json(
+        { error: "La IA no pudo procesar el archivo. Asegúrate de que el PDF contiene texto (no es una imagen escaneada)." },
+        { status: 500 }
+      );
+    }
+
+    // Strip markdown code fences if present
+    responseText = responseText.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+
+    // Extract JSON array
     const match = responseText.match(/\[[\s\S]*\]/);
     const jsonText = match ? match[0] : responseText;
-    
+
     let parsedEvents: any[] = [];
     try {
       parsedEvents = JSON.parse(jsonText);
-    } catch (e) {
-      console.error("Error parseando JSON de Gemini:", jsonText);
-      return NextResponse.json({ error: "Error al interpretar el horario con IA" }, { status: 500 });
+    } catch (parseError) {
+      console.error("Error parseando JSON de Gemini. Respuesta cruda:", responseText);
+      return NextResponse.json(
+        { error: "La IA devolvió un formato inesperado. Inténtalo de nuevo con un PDF más claro." },
+        { status: 500 }
+      );
     }
 
-    if (!Array.isArray(parsedEvents) || parsedEvents.length === 0) {
-      return NextResponse.json({ error: "No se encontraron clases en el documento" }, { status: 400 });
+    if (!Array.isArray(parsedEvents)) {
+      return NextResponse.json({ error: "Formato de respuesta inválido de la IA" }, { status: 500 });
     }
 
-    // Convert to upcoming dates starting next week
-    const today = new Date();
-    const getNextDay = (dayIndex: number) => {
-      if (dayIndex === 1) return nextMonday(today);
-      if (dayIndex === 2) return nextTuesday(today);
-      if (dayIndex === 3) return nextWednesday(today);
-      if (dayIndex === 4) return nextThursday(today);
-      if (dayIndex === 5) return nextFriday(today);
-      if (dayIndex === 6) return nextSaturday(today);
-      return nextSunday(today);
-    };
+    if (parsedEvents.length === 0) {
+      return NextResponse.json(
+        { error: "No se encontraron clases en el documento. Asegúrate de que el PDF contiene un horario con clases." },
+        { status: 400 }
+      );
+    }
 
-    const colors = ["blue", "green", "purple", "pink", "orange", "red", "yellow", "gray"];
+    // Filter and sanitize entries
+    const validEvents = parsedEvents.filter(
+      (evt) =>
+        evt.title &&
+        typeof evt.title === "string" &&
+        typeof evt.dayOfWeek === "number" &&
+        evt.dayOfWeek >= 0 &&
+        evt.dayOfWeek <= 6 &&
+        evt.startTime &&
+        evt.endTime
+    );
+
+    if (validEvents.length === 0) {
+      return NextResponse.json(
+        { error: "Las clases extraídas no tienen el formato correcto. Inténtalo con otro PDF." },
+        { status: 400 }
+      );
+    }
+
+    const colors = ["blue", "green", "purple", "pink", "orange", "red", "yellow", "cyan"];
     let colorIndex = 0;
     const colorMap = new Map<string, string>();
 
-    const dbEvents = parsedEvents.map(evt => {
-      // Assign same color to same subject
-      if (!colorMap.has(evt.title)) {
-        colorMap.set(evt.title, colors[colorIndex % colors.length]);
+    const dbEvents = validEvents.map((evt) => {
+      const titleKey = evt.title.trim();
+      if (!colorMap.has(titleKey)) {
+        colorMap.set(titleKey, colors[colorIndex % colors.length]);
         colorIndex++;
       }
 
       return {
         userId: session.user?.id as string,
-        title: evt.title,
+        title: titleKey,
         dayOfWeek: Number(evt.dayOfWeek),
-        startTime: evt.startTime,
-        endTime: evt.endTime,
-        location: evt.location || null,
-        color: colorMap.get(evt.title) || "blue",
+        startTime: String(evt.startTime),
+        endTime: String(evt.endTime),
+        location: evt.location ? String(evt.location) : null,
+        color: colorMap.get(titleKey) || "blue",
       };
     });
 
     await db.insert(schedules).values(dbEvents);
 
     return NextResponse.json({ success: true, count: dbEvents.length });
-  } catch (error) {
-    console.error("Upload error:", error);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Upload error:", error?.message ?? error);
+    return NextResponse.json({ error: "Error interno del servidor al procesar el horario" }, { status: 500 });
   }
 }
