@@ -4,29 +4,29 @@
 
   <!-- Calendar Icon Bottom Right -->
   <g transform="translate(260, 200) scale(1.6)">
-    <!-- Base background (white to block out cloud line behind it) -->
-    <rect x="20" y="30" width="100" height="90" rx="16" fill="white" />
+    <!-- Base background (light purple to block out cloud line behind it) -->
+    <rect x="20" y="30" width="100" height="90" rx="16" fill="#e9d5ff" />
     
     <!-- Header -->
     <path d="M20,55 L120,55 L120,46 C120,37.2 112.8,30 104,30 L36,30 C27.2,30 20,37.2 20,46 L20,55 Z" fill="#7c3aed" />
     
     <!-- Base border -->
-    <rect x="20" y="30" width="100" height="90" rx="16" fill="none" stroke="#e2e8f0" stroke-width="4" />
+    <rect x="20" y="30" width="100" height="90" rx="16" fill="none" stroke="#9333ea" stroke-width="4" />
     
     <!-- Binder Rings -->
     <!-- Left Ring -->
-    <rect x="40" y="15" width="10" height="25" rx="5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3" />
-    <circle cx="45" cy="35" r="3" fill="#334155" />
+    <rect x="40" y="15" width="10" height="25" rx="5" fill="#faf5ff" stroke="#7e22ce" stroke-width="3" />
+    <circle cx="45" cy="35" r="3" fill="#4c1d95" />
     <!-- Right Ring -->
-    <rect x="90" y="15" width="10" height="25" rx="5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3" />
-    <circle cx="95" cy="35" r="3" fill="#334155" />
+    <rect x="90" y="15" width="10" height="25" rx="5" fill="#faf5ff" stroke="#7e22ce" stroke-width="3" />
+    <circle cx="95" cy="35" r="3" fill="#4c1d95" />
 
     <!-- Grid Lines -->
-    <line x1="22" y1="75" x2="118" y2="75" stroke="#e2e8f0" stroke-width="2" />
-    <line x1="22" y1="95" x2="118" y2="95" stroke="#e2e8f0" stroke-width="2" />
+    <line x1="22" y1="75" x2="118" y2="75" stroke="#d8b4fe" stroke-width="2" />
+    <line x1="22" y1="95" x2="118" y2="95" stroke="#d8b4fe" stroke-width="2" />
     
-    <line x1="45" y1="57" x2="45" y2="118" stroke="#e2e8f0" stroke-width="2" />
-    <line x1="70" y1="57" x2="70" y2="118" stroke="#e2e8f0" stroke-width="2" />
-    <line x1="95" y1="57" x2="95" y2="118" stroke="#e2e8f0" stroke-width="2" />
+    <line x1="45" y1="57" x2="45" y2="118" stroke="#d8b4fe" stroke-width="2" />
+    <line x1="70" y1="57" x2="70" y2="118" stroke="#d8b4fe" stroke-width="2" />
+    <line x1="95" y1="57" x2="95" y2="118" stroke="#d8b4fe" stroke-width="2" />
   </g>
 </svg>
