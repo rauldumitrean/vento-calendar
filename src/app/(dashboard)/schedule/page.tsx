@@ -1,9 +1,13 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef, useEffect } from "react";
-import { UploadCloud, FileType, CheckCircle, Loader2, Plus, Sparkles, BookOpen, Trash2, X, Clock, MapPin } from "lucide-react";
+import { UploadCloud, FileType, CheckCircle, Loader2, Plus, Sparkles, BookOpen, Trash2, X, Clock, MapPin, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+
+const daysMap: Record<number, string> = {
+  1: "Lunes", 2: "Martes", 3: "Miércoles", 4: "Jueves", 5: "Viernes", 6: "Sábado", 0: "Domingo"
+};
 
 export default function SchedulePage() {
   const [schedules, setSchedules] = useState<any[]>([]);
@@ -18,6 +22,9 @@ export default function SchedulePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [successCount, setSuccessCount] = useState<number | null>(null);
+  const [previewEvents, setPreviewEvents] = useState<any[] | null>(null);
+  const [isSavingPreview, setIsSavingPreview] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Manual state
@@ -55,11 +62,12 @@ export default function SchedulePage() {
   // --- UPLOAD LOGIC ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
-    if (selected && selected.type === "application/pdf") {
+    if (selected && (selected.type === "application/pdf" || selected.type.startsWith("image/"))) {
       setFile(selected);
       setSuccessCount(null);
+      setPreviewEvents(null);
     } else if (selected) {
-      toast.error("Por favor, sube solo archivos PDF.");
+      toast.error("Por favor, sube solo archivos PDF o imágenes (JPG/PNG).");
     }
   };
 
@@ -67,6 +75,7 @@ export default function SchedulePage() {
     if (!file) return;
     setIsProcessing(true);
     setSuccessCount(null);
+    setPreviewEvents(null);
     
     try {
       const formData = new FormData();
@@ -80,14 +89,8 @@ export default function SchedulePage() {
       const data = await res.json();
       
       if (res.ok) {
-        setSuccessCount(data.count);
-        toast.success(`¡Se han importado ${data.count} clases!`);
-        setFile(null);
-        fetchSchedules();
-        setTimeout(() => {
-          setIsUploadModalOpen(false);
-          setSuccessCount(null);
-        }, 3000);
+        setPreviewEvents(data.events);
+        toast.success("¡Horario analizado! Revisa las clases.");
       } else {
         toast.error(data.error || "Error al procesar el horario.");
       }
@@ -95,6 +98,38 @@ export default function SchedulePage() {
       toast.error("Error de conexión. Inténtalo de nuevo.");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleConfirmPreview = async () => {
+    if (!previewEvents) return;
+    setIsSavingPreview(true);
+    
+    try {
+      const res = await fetch("/api/schedules/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ events: previewEvents })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setSuccessCount(data.count);
+        toast.success(`¡Se han importado ${data.count} clases!`);
+        setFile(null);
+        setPreviewEvents(null);
+        fetchSchedules();
+        setTimeout(() => {
+          setIsUploadModalOpen(false);
+          setSuccessCount(null);
+        }, 3000);
+      } else {
+        toast.error(data.error || "Error al guardar el horario.");
+      }
+    } catch (error) {
+      toast.error("Error de conexión al guardar.");
+    } finally {
+      setIsSavingPreview(false);
     }
   };
 
@@ -155,7 +190,7 @@ export default function SchedulePage() {
             Tu Horario Semanal
           </h1>
           <p className="text-gray-500 dark:text-gray-400 text-lg">
-            Añade tus clases o sube un PDF para que la IA lo organice por ti.
+            Añade tus clases o sube un archivo para que la IA lo organice por ti.
           </p>
         </div>
         
@@ -168,11 +203,11 @@ export default function SchedulePage() {
             Añadir Clase
           </button>
           <button
-            onClick={() => setIsUploadModalOpen(true)}
+            onClick={() => { setIsUploadModalOpen(true); setFile(null); setPreviewEvents(null); setSuccessCount(null); }}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl transition shadow-lg shadow-blue-500/25 font-medium"
           >
             <Sparkles className="w-5 h-5" />
-            Importar PDF
+            Importar con IA
           </button>
         </div>
       </header>
@@ -244,31 +279,64 @@ export default function SchedulePage() {
             
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: -20 }}
-              className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-[2rem] shadow-2xl p-8"
+              className={`relative w-full ${previewEvents ? 'max-w-2xl' : 'max-w-lg'} bg-white dark:bg-gray-900 rounded-[2rem] shadow-2xl p-8 transition-all duration-300 max-h-[90vh] flex flex-col`}
             >
-              <button onClick={() => setIsUploadModalOpen(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-700 dark:hover:text-white">
+              <button onClick={() => setIsUploadModalOpen(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-700 dark:hover:text-white z-10">
                 <X className="w-6 h-6" />
               </button>
               
-              <h2 className="text-2xl font-bold mb-2">Importar con IA</h2>
-              <p className="text-gray-500 mb-8">Sube el PDF de tu colegio o universidad y extraeremos las clases automáticamente.</p>
+              {!previewEvents && successCount === null && (
+                <>
+                  <h2 className="text-2xl font-bold mb-2">Importar con IA</h2>
+                  <p className="text-gray-500 mb-8">Sube tu PDF o una imagen del horario y la IA extraerá las clases por ti.</p>
+                </>
+              )}
               
               {successCount !== null ? (
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-3xl p-8 text-center">
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-3xl p-8 text-center my-auto">
                   <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">¡Todo listo!</h3>
-                  <p className="text-green-700 dark:text-green-400">Se han añadido {successCount} clases a tu horario.</p>
+                  <p className="text-green-700 dark:text-green-400">Se han importado {successCount} clases a tu horario.</p>
+                </div>
+              ) : previewEvents ? (
+                <div className="flex flex-col h-full min-h-0">
+                  <h2 className="text-xl font-bold mb-1">Vista Previa</h2>
+                  <p className="text-sm text-gray-500 mb-4">Revisa las {previewEvents.length} clases identificadas antes de importarlas.</p>
+                  
+                  <div className="flex-1 overflow-y-auto min-h-[300px] bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+                    {previewEvents.map((evt, idx) => (
+                      <div key={idx} className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-3 rounded-xl flex items-center justify-between shadow-sm border-l-4" style={{ borderLeftColor: `var(--color-${evt.color}-500)` }}>
+                        <div>
+                          <h4 className="font-bold text-gray-900 dark:text-white text-sm">{evt.title}</h4>
+                          <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                            <span className="flex items-center gap-1 font-medium"><BookOpen className="w-3.5 h-3.5"/> {daysMap[evt.dayOfWeek] || "Otro"}</span>
+                            <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/> {evt.startTime} - {evt.endTime}</span>
+                            {evt.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5"/> {evt.location}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <button onClick={() => setPreviewEvents(null)} disabled={isSavingPreview} className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 rounded-xl font-medium transition">
+                      Volver
+                    </button>
+                    <button onClick={handleConfirmPreview} disabled={isSavingPreview} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 transition shadow-md hover:shadow-lg">
+                      {isSavingPreview ? <><Loader2 className="w-4 h-4 animate-spin"/> Guardando...</> : <><CheckCircle className="w-5 h-5"/> Confirmar e Importar</>}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className={`relative overflow-hidden border-2 border-dashed rounded-3xl p-10 text-center transition-all duration-300 ${isDragging ? "border-blue-500 bg-blue-500/10" : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50"}`}
                   onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                   onDragLeave={() => setIsDragging(false)}
-                  onDrop={(e) => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files?.[0]; if (f) { setFile(f); setSuccessCount(null); } }}
+                  onDrop={(e) => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files?.[0]; if (f) { setFile(f); setSuccessCount(null); setPreviewEvents(null); } }}
                 >
-                  <input type="file" ref={fileInputRef} className="hidden" accept="application/pdf" onChange={handleFileChange} />
+                  <input type="file" ref={fileInputRef} className="hidden" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={handleFileChange} />
                   
                   <div className="mx-auto w-20 h-20 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-6">
-                    {file ? <FileType className="w-10 h-10" /> : <UploadCloud className="w-10 h-10" />}
+                    {file ? (file.type.startsWith("image/") ? <ImageIcon className="w-10 h-10" /> : <FileType className="w-10 h-10" />) : <UploadCloud className="w-10 h-10" />}
                   </div>
 
                   {file ? (
@@ -278,16 +346,16 @@ export default function SchedulePage() {
                         <p className="text-sm text-gray-500">{(file.size/1024/1024).toFixed(2)} MB</p>
                       </div>
                       <div className="flex gap-3 justify-center">
-                        <button onClick={() => setFile(null)} disabled={isProcessing} className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl font-medium">Cancelar</button>
-                        <button onClick={handleUpload} disabled={isProcessing} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium flex items-center gap-2">
-                          {isProcessing ? <><Loader2 className="w-4 h-4 animate-spin"/> Procesando...</> : <><Sparkles className="w-4 h-4"/> Extraer</>}
+                        <button onClick={() => setFile(null)} disabled={isProcessing} className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl font-medium transition">Cancelar</button>
+                        <button onClick={handleUpload} disabled={isProcessing} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 transition shadow-md">
+                          {isProcessing ? <><Loader2 className="w-4 h-4 animate-spin"/> Procesando...</> : <><Sparkles className="w-4 h-4"/> Analizar</>}
                         </button>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Arrastra tu PDF aquí</p>
-                      <button onClick={() => fileInputRef.current?.click()} className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium">Examinar archivos</button>
+                      <p className="font-medium text-gray-700 dark:text-gray-300">Arrastra tu PDF o Imagen aquí</p>
+                      <button onClick={() => fileInputRef.current?.click()} className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium transition shadow-md">Examinar archivos</button>
                     </div>
                   )}
                 </div>
@@ -313,29 +381,29 @@ export default function SchedulePage() {
               <form onSubmit={handleManualSubmit} className="space-y-5">
                 <div>
                   <label className="block text-sm font-medium mb-1">Nombre</label>
-                  <input type="text" required value={manualForm.title} onChange={e => setManualForm(p => ({...p, title: e.target.value}))} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl" placeholder="Ej: Álgebra" />
+                  <input type="text" required value={manualForm.title} onChange={e => setManualForm(p => ({...p, title: e.target.value}))} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Ej: Álgebra" />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Día</label>
-                    <select value={manualForm.dayOfWeek} onChange={e => setManualForm(p => ({...p, dayOfWeek: e.target.value}))} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl outline-none">
+                    <select value={manualForm.dayOfWeek} onChange={e => setManualForm(p => ({...p, dayOfWeek: e.target.value}))} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
                       {days.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Horario</label>
                     <div className="flex items-center gap-2">
-                      <input type="time" required value={manualForm.startTime} onChange={e => setManualForm(p => ({...p, startTime: e.target.value}))} className="w-full px-2 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl outline-none" />
+                      <input type="time" required value={manualForm.startTime} onChange={e => setManualForm(p => ({...p, startTime: e.target.value}))} className="w-full px-2 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" />
                       <span>-</span>
-                      <input type="time" required value={manualForm.endTime} onChange={e => setManualForm(p => ({...p, endTime: e.target.value}))} className="w-full px-2 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl outline-none" />
+                      <input type="time" required value={manualForm.endTime} onChange={e => setManualForm(p => ({...p, endTime: e.target.value}))} className="w-full px-2 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" />
                     </div>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1">Aula / Ubicación</label>
-                  <input type="text" value={manualForm.location} onChange={e => setManualForm(p => ({...p, location: e.target.value}))} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl" placeholder="Ej: Laboratorio 3" />
+                  <input type="text" value={manualForm.location} onChange={e => setManualForm(p => ({...p, location: e.target.value}))} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Ej: Laboratorio 3" />
                 </div>
 
                 <div>
@@ -347,7 +415,7 @@ export default function SchedulePage() {
                   </div>
                 </div>
 
-                <button type="submit" disabled={isSavingManual} className="w-full py-3 mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex justify-center items-center gap-2">
+                <button type="submit" disabled={isSavingManual} className="w-full py-3 mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex justify-center items-center gap-2 transition shadow-md hover:shadow-lg">
                   {isSavingManual ? <Loader2 className="w-5 h-5 animate-spin" /> : "Guardar Asignatura"}
                 </button>
               </form>
