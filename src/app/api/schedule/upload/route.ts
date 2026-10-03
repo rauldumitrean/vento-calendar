@@ -30,7 +30,7 @@ const model = genAI.getGenerativeModel({
 export const maxDuration = 60;
 
 const EXTRACTION_PROMPT = `Eres un experto analizando horarios acadÃ©micos. 
-Analiza el documento/imagen y extrae TODAS las clases o asignaturas que puedas ver.
+Analiza el documento/imagen y extrae TODAS las clases o asignaturas que puedías ver.
 
 El horario puede estar en formato de tabla, lista, imagen escaneada, o cualquier otro formato.
 Incluso si la calidad es baja o estÃ¡ borroso, intenta extraer la mÃ¡xima informaciÃ³n posible.
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 
     if (!file) {
       return NextResponse.json(
-        { error: "No se ha enviado ningÃºn archivo" },
+        { error: "No se ha enviado ningún archivo" },
         { status: 400 }
       );
     }
@@ -116,9 +116,9 @@ export async function POST(req: NextRequest) {
               mimeType: file.type,
             },
           },
-          `Eres un asistente OCR y extractor de datos. Este archivo puede contener imÃ¡genes escaneadas o texto de un horario acadÃ©mico.
+          `Eres un asistente OCR y extractor de datos. Este archivo puede contener imÃ¡genes escaneadías o texto de un horario acadÃ©mico.
 Usa tus capacidades de visiÃ³n para leer cualquier tabla, cuadrÃ­cula, imagen o texto que veas.
-Extrae todas las clases que puedas identificar.
+Extrae todías las clases que puedías identificar.
 Responde SOLO con un JSON array con este formato:
 [{"title":"Nombre","dayOfWeek":1,"startTime":"09:00","endTime":"10:00","location":null}]
 dayOfWeek: 1=Lunes, 2=Martes, 3=MiÃ©rcoles, 4=Jueves, 5=Viernes, 6=SÃ¡bado, 0=Domingo
@@ -131,7 +131,7 @@ Si no hay horario devuelve: []`,
         return NextResponse.json(
           {
             error:
-              "La IA no pudo procesar el documento por saturacion de servidores. AsegÃºrate de que el archivo tenga buena calidad y no estÃ© protegido con contraseÃ±a.",
+              "La IA no pudo procesar el documento por saturación de servidores o límites de cuota.",
           },
           { status: 500 }
         );
@@ -187,13 +187,31 @@ Si no hay horario devuelve: []`,
 
     const parseAttempts = [
       () => JSON.parse(cleanText),
-      () => JSON.parse(fixJson(cleanText))
+      () => JSON.parse(fixJson(cleanText)),
+      () => JSON.parse(cleanText + ']'),
+      () => JSON.parse(cleanText + '}]'),
+      () => JSON.parse(fixJson(cleanText) + ']'),
+      () => JSON.parse(fixJson(cleanText) + '}]')
     ];
 
     const extracted = extractJsonArray(cleanText);
     if (extracted) {
       parseAttempts.push(() => JSON.parse(extracted));
       parseAttempts.push(() => JSON.parse(fixJson(extracted)));
+      parseAttempts.push(() => JSON.parse(extracted + ']'));
+    }
+
+    const regexExtractedMatch = cleanText.match(/\[[\s\S]*\]/);
+    if (regexExtractedMatch) {
+      parseAttempts.push(() => JSON.parse(regexExtractedMatch[0]));
+      parseAttempts.push(() => JSON.parse(fixJson(regexExtractedMatch[0])));
+    }
+
+    const regexExtractedObj = cleanText.match(/\{[\s\S]*\}/);
+    if (regexExtractedObj) {
+      parseAttempts.push(() => JSON.parse(regexExtractedObj[0]));
+      parseAttempts.push(() => JSON.parse(fixJson(regexExtractedObj[0])));
+      parseAttempts.push(() => JSON.parse(regexExtractedObj[0] + '}'));
     }
 
     // Try all parse attempts
@@ -207,13 +225,31 @@ Si no hay horario devuelve: []`,
         }
         // If it's an object, maybe the array is nested inside (e.g. { "events": [...] })
         if (result && typeof result === 'object' && !Array.isArray(result)) {
+          // If the model returned an empty object, treat it as empty array
+          if (Object.keys(result).length === 0) {
+            parsedEvents = [];
+            break;
+          }
+          // If the model returned a single item instead of an array
+          if (result.title !== undefined) {
+            parsedEvents = [result];
+            break;
+          }
+          // Look for nested arrays
           for (const key of Object.keys(result)) {
             if (Array.isArray(result[key])) {
               parsedEvents = result[key];
               break;
+            } else if (result[key] && typeof result[key] === 'object' && result[key].title !== undefined) {
+              parsedEvents = [result[key]];
+              break;
             }
           }
           if (parsedEvents) break;
+          
+          // Fallback: If it's a parsed object but we couldn't find any schedule data, treat as empty array
+          parsedEvents = [];
+          break;
         }
       } catch (e) {
         // Continue to next attempt
@@ -225,7 +261,7 @@ Si no hay horario devuelve: []`,
       return NextResponse.json(
         {
           error:
-            "No se pudo extraer el horario de la imagen. Por favor sube una imagen mÃ¡s clara y asegÃºrate de que contenga un horario visible.",
+            "No se pudo extraer el horario de la imagen. Por favor sube una imagen más clara y asegúrate de que contenga un horario visible.",
         },
         { status: 400 }
       );
@@ -233,7 +269,7 @@ Si no hay horario devuelve: []`,
 
     if (!Array.isArray(parsedEvents)) {
       return NextResponse.json(
-        { error: "Formato de respuesta invÃ¡lido de la IA" },
+        { error: "Formato de respuesta inválido de la IA" },
         { status: 500 }
       );
     }
@@ -242,7 +278,7 @@ Si no hay horario devuelve: []`,
       return NextResponse.json(
         {
           error:
-            "No se encontraron clases en el documento. AsegÃºrate de que el archivo contenga un horario legible.",
+            "No se encontraron clases en el documento. Asegúrate de que el archivo contenga un horario legible.",
         },
         { status: 400 }
       );
@@ -264,7 +300,7 @@ Si no hay horario devuelve: []`,
       return NextResponse.json(
         {
           error:
-            "Las asignaturas extraÃ­das no tienen el formato correcto. IntÃ©ntalo de nuevo.",
+            "Las asignaturas extraídas no tienen el formato correcto. Inténtalo de nuevo.",
         },
         { status: 400 }
       );
@@ -310,5 +346,7 @@ Si no hay horario devuelve: []`,
     );
   }
 }
+
+
 
 
