@@ -1,6 +1,6 @@
-import { auth } from "@/lib/auth";
+﻿import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
@@ -10,19 +10,33 @@ const model = genAI.getGenerativeModel({
     temperature: 0.1,
     maxOutputTokens: 4096,
     responseMimeType: "application/json",
+    responseSchema: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          title: { type: SchemaType.STRING },
+          dayOfWeek: { type: SchemaType.INTEGER },
+          startTime: { type: SchemaType.STRING },
+          endTime: { type: SchemaType.STRING },
+          location: { type: SchemaType.STRING, nullable: true },
+        },
+        required: ["title", "dayOfWeek", "startTime", "endTime"],
+      },
+    },
   },
 });
 
 export const maxDuration = 60;
 
-const EXTRACTION_PROMPT = `Eres un experto analizando horarios académicos. 
+const EXTRACTION_PROMPT = `Eres un experto analizando horarios acadÃ©micos. 
 Analiza el documento/imagen y extrae TODAS las clases o asignaturas que puedas ver.
 
 El horario puede estar en formato de tabla, lista, imagen escaneada, o cualquier otro formato.
-Incluso si la calidad es baja o está borroso, intenta extraer la máxima información posible.
-Usa tus capacidades de visión para leer cualquier texto dentro de la imagen.
+Incluso si la calidad es baja o estÃ¡ borroso, intenta extraer la mÃ¡xima informaciÃ³n posible.
+Usa tus capacidades de visiÃ³n para leer cualquier texto dentro de la imagen.
 
-Devuelve ÚNICAMENTE un JSON array válido. Sin markdown, sin explicaciones, solo el JSON:
+Devuelve ÃšNICAMENTE un JSON array vÃ¡lido. Sin markdown, sin explicaciones, solo el JSON:
 
 [
   {
@@ -35,13 +49,13 @@ Devuelve ÚNICAMENTE un JSON array válido. Sin markdown, sin explicaciones, sol
 ]
 
 REGLAS IMPORTANTES:
-- dayOfWeek: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 0=Domingo
+- dayOfWeek: 1=Lunes, 2=Martes, 3=MiÃ©rcoles, 4=Jueves, 5=Viernes, 6=SÃ¡bado, 0=Domingo
 - startTime y endTime en formato HH:mm (24 horas)
 - location puede ser null si no aparece
 - Si la misma asignatura tiene varias clases a la semana, incluye una entrada por cada clase
-- Si el horario es semanal recurrente, extrae todos los días
+- Si el horario es semanal recurrente, extrae todos los dÃ­as
 - Si ves abreviaturas de asignaturas, usa el nombre completo si lo puedes deducir
-- Devuelve [] SOLO si el documento no contiene ningún tipo de horario
+- Devuelve [] SOLO si el documento no contiene ningÃºn tipo de horario
 - NO inventes datos, solo extrae lo que ves
 
 Ahora analiza el documento y devuelve el JSON:`;
@@ -57,7 +71,7 @@ export async function POST(req: NextRequest) {
 
     if (!file) {
       return NextResponse.json(
-        { error: "No se ha enviado ningún archivo" },
+        { error: "No se ha enviado ningÃºn archivo" },
         { status: 400 }
       );
     }
@@ -102,12 +116,12 @@ export async function POST(req: NextRequest) {
               mimeType: file.type,
             },
           },
-          `Eres un asistente OCR y extractor de datos. Este archivo puede contener imágenes escaneadas o texto de un horario académico.
-Usa tus capacidades de visión para leer cualquier tabla, cuadrícula, imagen o texto que veas.
+          `Eres un asistente OCR y extractor de datos. Este archivo puede contener imÃ¡genes escaneadas o texto de un horario acadÃ©mico.
+Usa tus capacidades de visiÃ³n para leer cualquier tabla, cuadrÃ­cula, imagen o texto que veas.
 Extrae todas las clases que puedas identificar.
 Responde SOLO con un JSON array con este formato:
 [{"title":"Nombre","dayOfWeek":1,"startTime":"09:00","endTime":"10:00","location":null}]
-dayOfWeek: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 0=Domingo
+dayOfWeek: 1=Lunes, 2=Martes, 3=MiÃ©rcoles, 4=Jueves, 5=Viernes, 6=SÃ¡bado, 0=Domingo
 Si no hay horario devuelve: []`,
         ]);
         responseText = result.response.text().trim();
@@ -117,38 +131,109 @@ Si no hay horario devuelve: []`,
         return NextResponse.json(
           {
             error:
-              "La IA no pudo leer el documento. Asegúrate de que el archivo tenga buena calidad y no esté protegido con contraseña.",
+              "La IA no pudo procesar el documento por saturacion de servidores. AsegÃºrate de que el archivo tenga buena calidad y no estÃ© protegido con contraseÃ±a.",
           },
           { status: 500 }
         );
       }
     }
 
-    responseText = responseText
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/```\s*$/, "")
-      .trim();
+    // Remove markdown code blocks anywhere in the text
+    let cleanText = responseText.replace(/```(?:json)?/gi, "").trim();
 
-    const match = responseText.match(/\[[\s\S]*\]/);
-    const jsonText = match ? match[0] : responseText;
+    let parsedEvents: any = null;
 
-    let parsedEvents: any[] = [];
-    try {
-      parsedEvents = JSON.parse(jsonText);
-    } catch {
+    // Helper to find a balanced JSON array in a string
+    const extractJsonArray = (text: string): string | null => {
+      const start = text.indexOf('[');
+      if (start === -1) return null;
+      let depth = 0;
+      let inString = false;
+      let escapeNext = false;
+      
+      for (let i = start; i < text.length; i++) {
+        const char = text[i];
+        if (escapeNext) {
+          escapeNext = false;
+          continue;
+        }
+        if (char === '\\') {
+          escapeNext = true;
+          continue;
+        }
+        if (char === '"') {
+          inString = !inString;
+          continue;
+        }
+        if (!inString) {
+          if (char === '[') depth++;
+          else if (char === ']') {
+            depth--;
+            if (depth === 0) {
+              return text.substring(start, i + 1);
+            }
+          }
+        }
+      }
+      return null;
+    };
+
+    // Helper to fix common JSON issues like trailing commas or unescaped newlines
+    const fixJson = (text: string) => {
+      return text
+        .replace(/,\s*([\]}])/g, "$1") // fix trailing commas
+        .replace(/[\n\r\t]/g, " ");    // replace control chars with space to prevent string parsing errors
+    };
+
+    const parseAttempts = [
+      () => JSON.parse(cleanText),
+      () => JSON.parse(fixJson(cleanText))
+    ];
+
+    const extracted = extractJsonArray(cleanText);
+    if (extracted) {
+      parseAttempts.push(() => JSON.parse(extracted));
+      parseAttempts.push(() => JSON.parse(fixJson(extracted)));
+    }
+
+    // Try all parse attempts
+    for (const attempt of parseAttempts) {
+      try {
+        const result = attempt();
+        // If it's an array, we found our target
+        if (Array.isArray(result)) {
+          parsedEvents = result;
+          break;
+        }
+        // If it's an object, maybe the array is nested inside (e.g. { "events": [...] })
+        if (result && typeof result === 'object' && !Array.isArray(result)) {
+          for (const key of Object.keys(result)) {
+            if (Array.isArray(result[key])) {
+              parsedEvents = result[key];
+              break;
+            }
+          }
+          if (parsedEvents) break;
+        }
+      } catch (e) {
+        // Continue to next attempt
+      }
+    }
+
+    if (!parsedEvents) {
       console.error("JSON parse error. Raw AI response:", responseText);
       return NextResponse.json(
         {
           error:
-            "La IA devolvió una respuesta inesperada. Inténtalo de nuevo con un archivo más claro.",
+            "No se pudo extraer el horario de la imagen. Por favor sube una imagen mÃ¡s clara y asegÃºrate de que contenga un horario visible.",
         },
-        { status: 500 }
+        { status: 400 }
       );
     }
 
     if (!Array.isArray(parsedEvents)) {
       return NextResponse.json(
-        { error: "Formato de respuesta inválido de la IA" },
+        { error: "Formato de respuesta invÃ¡lido de la IA" },
         { status: 500 }
       );
     }
@@ -157,7 +242,7 @@ Si no hay horario devuelve: []`,
       return NextResponse.json(
         {
           error:
-            "No se encontraron clases en el documento. Asegúrate de que el archivo contenga un horario legible.",
+            "No se encontraron clases en el documento. AsegÃºrate de que el archivo contenga un horario legible.",
         },
         { status: 400 }
       );
@@ -179,7 +264,7 @@ Si no hay horario devuelve: []`,
       return NextResponse.json(
         {
           error:
-            "Las asignaturas extraídas no tienen el formato correcto. Inténtalo de nuevo.",
+            "Las asignaturas extraÃ­das no tienen el formato correcto. IntÃ©ntalo de nuevo.",
         },
         { status: 400 }
       );
@@ -225,3 +310,5 @@ Si no hay horario devuelve: []`,
     );
   }
 }
+
+
