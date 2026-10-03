@@ -4,37 +4,27 @@ import { schedules } from "@/lib/db/schema";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Use gemini-1.5-flash which supports PDF inline data
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-export const maxDuration = 60; // Allow up to 60s for AI processing
+// gemini-1.5-flash supports PDF + image inline data (works for both text PDFs and scanned image PDFs)
+const model = genAI.getGenerativeModel({
+  model: "gemini-1.5-flash",
+  generationConfig: {
+    temperature: 0.1, // low temperature = more deterministic JSON output
+    maxOutputTokens: 4096,
+  },
+});
 
-export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export const maxDuration = 60;
 
-  try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
+const EXTRACTION_PROMPT = `Eres un experto analizando horarios académicos. 
+Analiza el documento/imagen y extrae TODAS las clases o asignaturas que puedas ver.
 
-    if (!file) {
-      return NextResponse.json({ error: "No se ha enviado ningún archivo" }, { status: 400 });
-    }
+El horario puede estar en formato de tabla, lista, imagen escaneada, o cualquier otro formato.
+Incluso si la calidad es baja, intenta extraer la máxima información posible.
 
-    if (file.type !== "application/pdf") {
-      return NextResponse.json({ error: "Por favor sube un archivo PDF válido" }, { status: 400 });
-    }
+Devuelve ÚNICAMENTE un JSON array válido. Sin markdown, sin explicaciones, solo el JSON:
 
-    // Convert file to base64
-    const arrayBuffer = await file.arrayBuffer();
-    const base64Data = Buffer.from(arrayBuffer).toString("base64");
-
-    const prompt = `Eres un experto en análisis de horarios académicos escolares y universitarios.
-Analiza el PDF adjunto y extrae TODAS las clases/asignaturas que encuentres en el horario.
-Presta atención a tablas, grillas de horario, o listas de clases.
-
-Devuelve ÚNICAMENTE un array JSON válido con este formato exacto (sin markdown, sin comentarios, sin explicaciones):
 [
   {
     "title": "Nombre de la Asignatura",
@@ -45,15 +35,49 @@ Devuelve ÚNICAMENTE un array JSON válido con este formato exacto (sin markdown
   }
 ]
 
-Reglas:
+REGLAS IMPORTANTES:
 - dayOfWeek: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 0=Domingo
-- startTime y endTime en formato HH:mm (24h)
-- location puede ser null si no se especifica
-- Si la misma asignatura aparece varios días, crea una entrada por cada día
-- Si no encuentras ningún horario válido, devuelve: []
-- SOLO devuelve el JSON array, nada más`;
+- startTime y endTime en formato HH:mm (24 horas)
+- location puede ser null si no aparece
+- Si la misma asignatura tiene varias clases a la semana, incluye una entrada por cada clase
+- Si el horario es semanal recurrente, extrae todos los días
+- Si ves abreviaturas de asignaturas, usa el nombre completo si lo puedes deducir
+- Devuelve [] SOLO si el documento no contiene ningún tipo de horario
+- NO inventes datos, solo extrae lo que ves
+
+Ahora analiza el documento y devuelve el JSON:`;
+
+export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    const formData = await req.formData();
+    const file = formData.get("file") as File;
+
+    if (!file) {
+      return NextResponse.json(
+        { error: "No se ha enviado ningún archivo" },
+        { status: 400 }
+      );
+    }
+
+    if (file.type !== "application/pdf") {
+      return NextResponse.json(
+        { error: "Por favor sube un archivo PDF" },
+        { status: 400 }
+      );
+    }
+
+    // Read file as base64
+    const arrayBuffer = await file.arrayBuffer();
+    const base64Data = Buffer.from(arrayBuffer).toString("base64");
 
     let responseText = "";
+    let lastError: string | null = null;
+
+    // Strategy 1: Send as PDF inline data (works for text PDFs and Gemini's native PDF vision)
     try {
       const result = await model.generateContent([
         {
@@ -62,66 +86,123 @@ Reglas:
             mimeType: "application/pdf",
           },
         },
-        prompt,
+        EXTRACTION_PROMPT,
       ]);
       responseText = result.response.text().trim();
-    } catch (aiError: any) {
-      console.error("Error llamando a Gemini:", aiError?.message ?? aiError);
-      return NextResponse.json(
-        { error: "La IA no pudo procesar el archivo. Asegúrate de que el PDF contiene texto (no es una imagen escaneada)." },
-        { status: 500 }
-      );
+    } catch (err: any) {
+      lastError = err?.message ?? String(err);
+      console.warn("Strategy 1 (PDF inline) failed:", lastError);
+      responseText = "";
     }
 
-    // Strip markdown code fences if present
-    responseText = responseText.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+    // Strategy 2: If strategy 1 failed or returned empty/error, try with a text-only approach
+    // asking Gemini to try harder (re-send with different framing)
+    if (!responseText || responseText.length < 5) {
+      try {
+        const result = await model.generateContent([
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType: "application/pdf",
+            },
+          },
+          `Eres un asistente OCR y extractor de datos. Este PDF puede contener imágenes escaneadas o texto de un horario académico.
+Usa tus capacidades de visión para leer cualquier tabla, cuadrícula, imagen o texto que veas.
+Extrae todas las clases que puedas identificar.
+Responde SOLO con un JSON array con este formato:
+[{"title":"Nombre","dayOfWeek":1,"startTime":"09:00","endTime":"10:00","location":null}]
+dayOfWeek: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 0=Domingo
+Si no hay horario devuelve: []`,
+        ]);
+        responseText = result.response.text().trim();
+      } catch (err: any) {
+        lastError = err?.message ?? String(err);
+        console.error("Strategy 2 (PDF re-attempt) failed:", lastError);
+        return NextResponse.json(
+          {
+            error:
+              "La IA no pudo leer el documento. Asegúrate de que el PDF no está protegido con contraseña y vuelve a intentarlo.",
+          },
+          { status: 500 }
+        );
+      }
+    }
 
-    // Extract JSON array
+    // Strip markdown fences if Gemini wrapped the JSON
+    responseText = responseText
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/```\s*$/, "")
+      .trim();
+
+    // Extract the JSON array
     const match = responseText.match(/\[[\s\S]*\]/);
     const jsonText = match ? match[0] : responseText;
 
     let parsedEvents: any[] = [];
     try {
       parsedEvents = JSON.parse(jsonText);
-    } catch (parseError) {
-      console.error("Error parseando JSON de Gemini. Respuesta cruda:", responseText);
+    } catch {
+      console.error("JSON parse error. Raw AI response:", responseText);
       return NextResponse.json(
-        { error: "La IA devolvió un formato inesperado. Inténtalo de nuevo con un PDF más claro." },
+        {
+          error:
+            "La IA devolvió una respuesta inesperada. Inténtalo de nuevo o usa un PDF con mejor calidad.",
+        },
         { status: 500 }
       );
     }
 
     if (!Array.isArray(parsedEvents)) {
-      return NextResponse.json({ error: "Formato de respuesta inválido de la IA" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Formato de respuesta inválido de la IA" },
+        { status: 500 }
+      );
     }
 
     if (parsedEvents.length === 0) {
       return NextResponse.json(
-        { error: "No se encontraron clases en el documento. Asegúrate de que el PDF contiene un horario con clases." },
+        {
+          error:
+            "No se encontraron clases en el documento. Si es un PDF escaneado, asegúrate de que la imagen tenga buena calidad.",
+        },
         { status: 400 }
       );
     }
 
-    // Filter and sanitize entries
+    // Sanitize and filter valid entries
     const validEvents = parsedEvents.filter(
       (evt) =>
-        evt.title &&
+        evt &&
         typeof evt.title === "string" &&
+        evt.title.trim().length > 0 &&
         typeof evt.dayOfWeek === "number" &&
         evt.dayOfWeek >= 0 &&
         evt.dayOfWeek <= 6 &&
-        evt.startTime &&
-        evt.endTime
+        typeof evt.startTime === "string" &&
+        typeof evt.endTime === "string"
     );
 
     if (validEvents.length === 0) {
       return NextResponse.json(
-        { error: "Las clases extraídas no tienen el formato correcto. Inténtalo con otro PDF." },
+        {
+          error:
+            "Las asignaturas extraídas no tienen el formato correcto. Inténtalo con otro PDF.",
+        },
         { status: 400 }
       );
     }
 
-    const colors = ["blue", "green", "purple", "pink", "orange", "red", "yellow", "cyan"];
+    // Assign colors by subject (same subject → same color across days)
+    const colors = [
+      "blue",
+      "purple",
+      "green",
+      "orange",
+      "pink",
+      "red",
+      "yellow",
+      "cyan",
+    ];
     let colorIndex = 0;
     const colorMap = new Map<string, string>();
 
@@ -147,7 +228,10 @@ Reglas:
 
     return NextResponse.json({ success: true, count: dbEvents.length });
   } catch (error: any) {
-    console.error("Upload error:", error?.message ?? error);
-    return NextResponse.json({ error: "Error interno del servidor al procesar el horario" }, { status: 500 });
+    console.error("Upload route unhandled error:", error?.message ?? error);
+    return NextResponse.json(
+      { error: "Error interno del servidor al procesar el horario" },
+      { status: 500 }
+    );
   }
 }

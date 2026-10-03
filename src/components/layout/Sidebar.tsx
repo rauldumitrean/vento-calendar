@@ -16,6 +16,48 @@ import type { User } from "next-auth";
 import { useState } from "react";
 import { AIChat } from "@/components/ai/AIChat";
 
+// Inline SVG to avoid network request / broken image on first load
+function VentooLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 512 512"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-label="Ventoo Calendar"
+    >
+      {/* Hollow Purple Cloud */}
+      <path
+        d="M 366 396 H 196 A 140 140 0 1 1 331.98 222.68 A 90 90 0 1 1 366 396 Z"
+        fill="none"
+        stroke="#7c3aed"
+        strokeWidth="36"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      {/* Calendar Icon Bottom Right */}
+      <g transform="translate(250, 240) scale(1.6)">
+        <rect x="20" y="30" width="100" height="90" rx="16" fill="#e9d5ff" />
+        <path
+          d="M20,55 L120,55 L120,46 C120,37.2 112.8,30 104,30 L36,30 C27.2,30 20,37.2 20,46 L20,55 Z"
+          fill="#7c3aed"
+        />
+        <rect x="20" y="30" width="100" height="90" rx="16" fill="none" stroke="#9333ea" strokeWidth="4" />
+        {/* Binder Rings */}
+        <rect x="40" y="15" width="10" height="25" rx="5" fill="#c084fc" stroke="#7e22ce" strokeWidth="3" />
+        <circle cx="45" cy="35" r="3" fill="#4c1d95" />
+        <rect x="90" y="15" width="10" height="25" rx="5" fill="#c084fc" stroke="#7e22ce" strokeWidth="3" />
+        <circle cx="95" cy="35" r="3" fill="#4c1d95" />
+        {/* Grid Lines */}
+        <line x1="22" y1="75" x2="118" y2="75" stroke="#d8b4fe" strokeWidth="2" />
+        <line x1="22" y1="95" x2="118" y2="95" stroke="#d8b4fe" strokeWidth="2" />
+        <line x1="45" y1="57" x2="45" y2="118" stroke="#d8b4fe" strokeWidth="2" />
+        <line x1="70" y1="57" x2="70" y2="118" stroke="#d8b4fe" strokeWidth="2" />
+        <line x1="95" y1="57" x2="95" y2="118" stroke="#d8b4fe" strokeWidth="2" />
+      </g>
+    </svg>
+  );
+}
+
 const navItems = [
   { href: "/calendar", label: "Calendario", icon: CalendarDays },
   { href: "/schedule", label: "Horario", icon: FileUp },
@@ -33,13 +75,13 @@ export function Sidebar({ user }: SidebarProps) {
   return (
     <>
       <aside className="hidden md:flex flex-col w-64 bg-transparent border-r border-gray-200/50 dark:border-gray-800/50 py-6 px-4">
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-2 mb-8">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-sm">
-            <CalendarDays className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-lg font-bold text-gray-900 dark:text-white">Ventoo Calendar</span>
-        </div>
+        {/* Logo — click leads to landing page */}
+        <Link href="/" className="flex items-center gap-3 px-2 mb-8 group">
+          <VentooLogo className="w-10 h-10 shrink-0 group-hover:scale-105 transition-transform" />
+          <span className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+            Ventoo Calendar
+          </span>
+        </Link>
 
         {/* Nav */}
         <nav className="flex-1 space-y-1">
@@ -105,4 +147,3 @@ export function Sidebar({ user }: SidebarProps) {
     </>
   );
 }
-

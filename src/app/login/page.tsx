@@ -42,7 +42,23 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-24 h-24 mb-4">
-            <img src="/ventoo-calendar-logo.svg" alt="Ventoo Logo" className="w-full h-full object-contain" />
+            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" aria-label="Ventoo Calendar">
+              <path d="M 366 396 H 196 A 140 140 0 1 1 331.98 222.68 A 90 90 0 1 1 366 396 Z" fill="none" stroke="#7c3aed" strokeWidth="36" strokeLinejoin="round" strokeLinecap="round" />
+              <g transform="translate(250, 240) scale(1.6)">
+                <rect x="20" y="30" width="100" height="90" rx="16" fill="#e9d5ff" />
+                <path d="M20,55 L120,55 L120,46 C120,37.2 112.8,30 104,30 L36,30 C27.2,30 20,37.2 20,46 L20,55 Z" fill="#7c3aed" />
+                <rect x="20" y="30" width="100" height="90" rx="16" fill="none" stroke="#9333ea" strokeWidth="4" />
+                <rect x="40" y="15" width="10" height="25" rx="5" fill="#c084fc" stroke="#7e22ce" strokeWidth="3" />
+                <circle cx="45" cy="35" r="3" fill="#4c1d95" />
+                <rect x="90" y="15" width="10" height="25" rx="5" fill="#c084fc" stroke="#7e22ce" strokeWidth="3" />
+                <circle cx="95" cy="35" r="3" fill="#4c1d95" />
+                <line x1="22" y1="75" x2="118" y2="75" stroke="#d8b4fe" strokeWidth="2" />
+                <line x1="22" y1="95" x2="118" y2="95" stroke="#d8b4fe" strokeWidth="2" />
+                <line x1="45" y1="57" x2="45" y2="118" stroke="#d8b4fe" strokeWidth="2" />
+                <line x1="70" y1="57" x2="70" y2="118" stroke="#d8b4fe" strokeWidth="2" />
+                <line x1="95" y1="57" x2="95" y2="118" stroke="#d8b4fe" strokeWidth="2" />
+              </g>
+            </svg>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Ventoo Calendar</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Tu calendario inteligente con IA</p>
