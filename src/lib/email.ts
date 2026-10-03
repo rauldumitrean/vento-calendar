@@ -161,3 +161,37 @@ export function userSecurityAlertTemplate(userName: string) {
     </html>
   `;
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// Welcome Email
+// ═══════════════════════════════════════════════════════════════════
+export async function sendWelcomeEmail({ name, email }: { name: string; email: string }) {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;margin:0;padding:20px;">
+      <div style="max-width:540px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+        <div style="background:linear-gradient(135deg,#7c3aed 0%,#9333ea 100%);padding:36px;text-align:center;">
+          <h1 style="color:white;margin:0;font-size:26px;font-weight:800;">Ventoo Calendar</h1>
+          <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:15px;">Tu calendario inteligente con IA</p>
+        </div>
+        <div style="padding:32px;">
+          <p style="font-size:18px;color:#1e293b;">Hola, <strong>${name}</strong> 👋</p>
+          <p style="color:#64748b;line-height:1.6;">Bienvenido/a a <strong>Ventoo Calendar</strong>. Tu cuenta se ha creado correctamente y ya puedes empezar a organizar tu vida con la ayuda de la IA.</p>
+          <div style="margin:28px 0;text-align:center;">
+            <a href="${process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? 'https://vento-calendar.vercel.app'}/calendar"
+               style="background:linear-gradient(135deg,#7c3aed,#9333ea);color:white;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;">
+              Abrir mi Calendario &rarr;
+            </a>
+          </div>
+          <p style="color:#94a3b8;font-size:13px;text-align:center;">Si no has creado esta cuenta, ignora este correo.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  await sendEmail({ to: email, subject: "¡Bienvenido/a a Ventoo Calendar!", html });
+}
