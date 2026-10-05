@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, format } from "date-fns";
@@ -121,6 +121,36 @@ export function CalendarView() {
       }
   };
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+
+  // Swipe detection
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEndHandler = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) {
+      navigate("next");
+    } else if (isRightSwipe) {
+      navigate("prev");
+    }
+  };
+
   const handleEventSave = async (eventData: Partial<CalendarEvent>) => {
     try {
       const method = selectedEvent ? "PUT" : "POST";
@@ -188,9 +218,42 @@ export function CalendarView() {
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
-              {headerTitle()}
-            </h2>
+            <div className="relative">
+              <button 
+                onClick={() => setShowDatePicker(!showDatePicker)}
+                className="text-lg font-semibold text-gray-900 dark:text-white capitalize hover:bg-gray-100 dark:hover:bg-gray-800 px-2 py-1 rounded-lg transition"
+              >
+                {headerTitle()}
+              </button>
+              
+              {showDatePicker && (
+                <div className="absolute top-full left-0 mt-2 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg z-50 w-64">
+                  <div className="flex justify-between items-center mb-4">
+                    <button onClick={() => setPickerYear(y => y - 1)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="font-bold">{pickerYear}</span>
+                    <button onClick={() => setPickerYear(y => y + 1)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {Array.from({length: 12}).map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setCurrentDate(new Date(pickerYear, i, 1));
+                          setShowDatePicker(false);
+                        }}
+                        className="text-sm p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded capitalize truncate"
+                      >
+                        {format(new Date(pickerYear, i, 1), 'MMM', { locale: es })}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right: view switcher + new event */}
@@ -246,7 +309,12 @@ export function CalendarView() {
       </div>
 
       {/* Calendar body */}
-      <div className="flex-1 overflow-auto">
+      <div 
+        className="flex-1 overflow-auto touch-pan-y"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEndHandler}
+      >
         {loading ? (
           <div className="h-full p-4 flex flex-col gap-4 animate-pulse">
             <div className="grid grid-cols-7 gap-4 flex-1">

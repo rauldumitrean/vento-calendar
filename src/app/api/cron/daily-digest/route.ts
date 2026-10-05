@@ -32,20 +32,20 @@ export async function GET(req: NextRequest) {
       try {
         // Get user info from Ventoo users table
         const users = await sql`
-          SELECT id, name, email FROM users WHERE id = ${setting.userId} LIMIT 1
+          SELECT id, name, email FROM "User" WHERE id = ${setting.userId} LIMIT 1
         `;
         if (!users.length) continue;
         const user = users[0];
 
-        // Get today's events
+        // Get today's events (overlapping with today)
         const todayEvents = await db
           .select()
           .from(calendarEvents)
           .where(
             and(
               eq(calendarEvents.userId, setting.userId),
-              gte(calendarEvents.startDate, dayStart),
-              lte(calendarEvents.startDate, dayEnd)
+              lte(calendarEvents.startDate, dayEnd),
+              gte(calendarEvents.endDate, dayStart)
             )
           )
           .orderBy(calendarEvents.startDate);

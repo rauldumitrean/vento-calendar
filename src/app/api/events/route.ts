@@ -68,25 +68,9 @@ export async function POST(req: NextRequest) {
       ip: req.headers.get("x-forwarded-for") ?? undefined,
     });
 
-    // Notify SSE clients
-    notifySSEClients(session.user.id, { type: "event_created", data: event });
-
     return NextResponse.json(event, { status: 201 });
   } catch (error) {
     console.error("POST /api/events error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-}
-
-// Simple in-memory SSE broadcaster (Vercel-compatible)
-const clients = new Map<string, Set<(data: unknown) => void>>();
-
-export function addSSEClient(userId: string, callback: (data: unknown) => void) {
-  if (!clients.has(userId)) clients.set(userId, new Set());
-  clients.get(userId)!.add(callback);
-  return () => clients.get(userId)?.delete(callback);
-}
-
-export function notifySSEClients(userId: string, data: unknown) {
-  clients.get(userId)?.forEach(cb => cb(data));
 }

@@ -1,14 +1,79 @@
 "use client";
 
-import { useState } from "react";
-import { X, Trash2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { X, Trash2, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Task, TaskPriority, TaskStatus, EventColor } from "@/types";
 import { EVENT_COLORS } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
+import { es } from "date-fns/locale";
 
 const COLORS: EventColor[] = ["blue", "red", "green", "yellow", "purple", "pink", "orange", "gray"];
 const CATEGORIES = ["general", "examen", "tarea", "proyecto", "personal", "trabajo", "estudio"];
+
+function CustomDatePicker({ value, onChange }: { value: string, onChange: (d: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(value ? new Date(value) : new Date());
+
+  const days = eachDayOfInterval({ start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) });
+  const firstDay = startOfMonth(currentMonth).getDay();
+  const padding = firstDay === 0 ? 6 : firstDay - 1;
+  const paddingArray = Array(padding).fill(null);
+
+  return (
+    <div className="relative">
+      <button 
+        type="button" 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+      >
+        <span>{value ? format(new Date(value), "dd MMM yyyy", { locale: es }) : "Sin fecha"}</span>
+        <CalendarIcon className="w-4 h-4 text-gray-500" />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute z-50 mt-1 left-0 p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl w-64">
+          <div className="flex justify-between items-center mb-2">
+            <button type="button" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="font-semibold text-sm capitalize">{format(currentMonth, "MMMM yyyy", { locale: es })}</span>
+            <button type="button" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-7 gap-1 text-center text-xs mb-1 text-gray-500 font-medium">
+            {['L','M','X','J','V','S','D'].map(d => <div key={d}>{d}</div>)}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {paddingArray.map((_, i) => <div key={`pad-${i}`} />)}
+            {days.map((day, i) => {
+              const isSelected = value && isSameDay(day, new Date(value));
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    onChange(format(day, "yyyy-MM-dd"));
+                    setIsOpen(false);
+                  }}
+                  className={cn(
+                    "p-1.5 text-xs rounded-full transition",
+                    isSelected 
+                      ? "bg-blue-600 text-white hover:bg-blue-700" 
+                      : "text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                  )}
+                >
+                  {format(day, "d")}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface TaskModalProps {
   task: Task | null;
@@ -96,12 +161,7 @@ export function TaskModal({ task, onSave, onDelete, onClose }: TaskModalProps) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Fecha límite</label>
-              <input
-                type="date"
-                value={form.dueDate}
-                onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-              />
+              <CustomDatePicker value={form.dueDate} onChange={v => setForm(f => ({ ...f, dueDate: v }))} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Prioridad</label>
