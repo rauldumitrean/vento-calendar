@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, format } from "date-fns";
@@ -107,7 +107,7 @@ export function CalendarView() {
             if (createRes.ok) successCount++;
           }
           if (successCount > 0) {
-            toast.success(`¡${successCount} evento(s) guardado(s)!`);
+            toast.success(`Â¡${successCount} evento(s) guardado(s)!`);
             setNlInput("");
             fetchEvents();
           } else {
@@ -162,7 +162,7 @@ export function CalendarView() {
   const views: { key: CalendarView; label: string }[] = [
     { key: "month", label: "Mes" },
     { key: "week", label: "Semana" },
-    { key: "day", label: "Día" },
+    { key: "day", label: "DÃ­a" },
   ];
 
   return (
@@ -297,4 +297,5 @@ export function CalendarView() {
     </div>
   );
 }
+
 

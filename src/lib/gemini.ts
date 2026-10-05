@@ -31,7 +31,7 @@ Formato:
   }
 ]
 
-Si no puedes extraer ning�n evento v�lido, devuelve un array vac�o: []`;
+Si no puedes extraer ningúnn evento válido, devuelve un array vac�o: []`;
 
   const result = await geminiModel.generateContent(prompt);
   const responseText = result.response.text().trim();
