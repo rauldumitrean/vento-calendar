@@ -5,7 +5,7 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
 const model = genAI.getGenerativeModel({
-  model: "gemini-flash-latest",
+  model: "gemini-3.5-flash-lite",
   generationConfig: {
     temperature: 0.1,
     maxOutputTokens: 4096,
