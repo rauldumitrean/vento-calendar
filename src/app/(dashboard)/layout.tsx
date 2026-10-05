@@ -8,7 +8,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.user) redirect("/login");
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-[#0a0a0a] overflow-hidden p-0 sm:p-4 md:p-6 lg:p-8">
+    <div className="flex h-[100dvh] bg-gray-100 dark:bg-[#0a0a0a] overflow-hidden p-0 sm:p-4 md:p-6 lg:p-8">
       {/* Subtle macOS-style abstract background blob (blue/teal) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden flex justify-center z-0">
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-blue-400/20 dark:bg-blue-600/10 blur-[120px] rounded-full mix-blend-multiply dark:mix-blend-lighten will-change-transform transform-gpu" />

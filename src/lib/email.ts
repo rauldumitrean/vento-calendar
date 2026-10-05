@@ -49,12 +49,13 @@ const icons = {
 
 // ── Templates ──────────────────────────────────────────────────────────────
 
-export function dailyDigestTemplate(userName: string, events: Array<{title: string; startDate: Date; endDate: Date; location?: string | null}>, tasks: Array<{title: string; dueDate?: Date | null; priority: string}>) {
+export function dailyDigestTemplate(userName: string, events: Array<{title: string; startDate: Date; endDate: Date; location?: string | null}>, tasks: Array<{title: string; dueDate?: Date | null; priority: string}>, timezone: string = "Europe/Madrid") {
   const today = new Date().toLocaleDateString("es-ES", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: timezone,
   });
 
   const eventsHtml = events.length > 0
@@ -62,8 +63,8 @@ export function dailyDigestTemplate(userName: string, events: Array<{title: stri
       <div style="padding:12px;margin:8px 0;background:#f8fafc;border-left:4px solid #3b82f6;border-radius:4px;">
         <strong style="color:#1e293b;">${e.title}</strong><br>
         <span style="color:#64748b;font-size:14px;display:flex;align-items:center;gap:4px;margin-top:4px;">
-          ${new Date(e.startDate).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} –
-          ${new Date(e.endDate).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+          ${new Date(e.startDate).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: timezone })} –
+          ${new Date(e.endDate).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: timezone })}
           ${e.location ? `<span style="display:inline-flex;align-items:center;margin-left:8px;">${icons.mapPin} ${e.location}</span>` : ""}
         </span>
       </div>`).join("")
@@ -74,7 +75,7 @@ export function dailyDigestTemplate(userName: string, events: Array<{title: stri
       <div style="padding:12px;margin:8px 0;background:#f8fafc;border-left:4px solid ${t.priority === "high" ? "#ef4444" : t.priority === "medium" ? "#f59e0b" : "#22c55e"};border-radius:4px;">
         <strong style="color:#1e293b;">${t.title}</strong><br>
         <span style="color:#64748b;font-size:14px;display:flex;align-items:center;gap:4px;margin-top:4px;">Prioridad: ${t.priority === "high" ? icons.circleRed + " Alta" : t.priority === "medium" ? icons.circleYellow + " Media" : icons.circleGreen + " Baja"}
-        ${t.dueDate ? ` | Vence: ${new Date(t.dueDate).toLocaleDateString("es-ES")}` : ""}</span>
+        ${t.dueDate ? ` | Vence: ${new Date(t.dueDate).toLocaleDateString("es-ES", { timeZone: timezone })}` : ""}</span>
       </div>`).join("")
     : `<p style="color:#94a3b8;font-style:italic;display:flex;align-items:center;gap:8px;">${icons.smile} No tienes tareas pendientes para hoy</p>`;
 

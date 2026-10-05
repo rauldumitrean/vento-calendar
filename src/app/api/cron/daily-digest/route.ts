@@ -4,7 +4,7 @@ import { eq, and, gte, lte } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { sendEmail, dailyDigestTemplate } from "@/lib/email";
 import { NextRequest, NextResponse } from "next/server";
-import { startOfDay, endOfDay } from "date-fns";
+// StartOfDay and endOfDay from date-fns are no longer needed for UTC since we calculate window manually
 
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -23,13 +23,18 @@ export async function GET(req: NextRequest) {
       .where(eq(userSettings.dailyDigestEnabled, true));
 
     const today = new Date();
-    const dayStart = startOfDay(today);
-    const dayEnd = endOfDay(today);
+    // A wider time window to cover any timezone (e.g. +/- 2 days around UTC)
+    const utcStart = new Date(today);
+    utcStart.setDate(utcStart.getDate() - 2);
+    const utcEnd = new Date(today);
+    utcEnd.setDate(utcEnd.getDate() + 2);
 
     let sent = 0;
 
     for (const setting of settings) {
       try {
+        const tz = setting.timezone || "Europe/Madrid";
+        
         // Get user info from Ventoo users table
         const users = await sql`
           SELECT id, name, email FROM "User" WHERE id = ${setting.userId} LIMIT 1
@@ -37,18 +42,28 @@ export async function GET(req: NextRequest) {
         if (!users.length) continue;
         const user = users[0];
 
-        // Get today's events (overlapping with today)
-        const todayEvents = await db
+        // Get events roughly around today
+        const rawEvents = await db
           .select()
           .from(calendarEvents)
           .where(
             and(
               eq(calendarEvents.userId, setting.userId),
-              lte(calendarEvents.startDate, dayEnd),
-              gte(calendarEvents.endDate, dayStart)
+              lte(calendarEvents.startDate, utcEnd),
+              gte(calendarEvents.endDate, utcStart)
             )
           )
           .orderBy(calendarEvents.startDate);
+
+        // Filter exactly using Intl in the user's timezone
+        const dateFmt = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" });
+        const todayStr = dateFmt.format(today);
+
+        const todayEvents = rawEvents.filter(ev => {
+          const evStartStr = dateFmt.format(ev.startDate);
+          const evEndStr = dateFmt.format(ev.endDate);
+          return evStartStr <= todayStr && evEndStr >= todayStr;
+        });
 
         // Get pending tasks (due today or overdue)
         const pendingTasks = await db
@@ -61,10 +76,13 @@ export async function GET(req: NextRequest) {
             )
           );
 
+        const formatter = new Intl.DateTimeFormat("es-ES", { timeZone: tz, weekday: "long", day: "numeric", month: "long" });
+        const todayFormattedES = formatter.format(today);
+
         await sendEmail({
           to: user.email,
-          subject: `📅 Tu resumen del día — ${today.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}`,
-          html: dailyDigestTemplate(user.name, todayEvents, pendingTasks),
+          subject: `📅 Tu resumen del día — ${todayFormattedES}`,
+          html: dailyDigestTemplate(user.name, todayEvents, pendingTasks, tz),
         });
 
         sent++;
