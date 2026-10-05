@@ -2,9 +2,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
-export const geminiModel = genAI.getGenerativeModel({
-  model: "gemini-3.5-flash",
-});
+const nlpModel = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
+const chatModel = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
+const summaryModel = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
 
 // ── Parse natural language into event ─────────────────────────────────────
 export async function parseNaturalLanguageEvent(text: string, userTimezone: string = "Europe/Madrid") {
@@ -33,7 +33,7 @@ Formato:
 
 Si no puedes extraer ningúnn evento válido, devuelve un array vac�o: []`;
 
-  const result = await geminiModel.generateContent(prompt);
+  const result = await nlpModel.generateContent(prompt);
   const responseText = result.response.text().trim();
 
   // Robust JSON extraction
@@ -63,7 +63,7 @@ Responde en formato markdown con:
 2. 2-3 sugerencias de optimización de tiempo
 3. Un mensaje motivador al final`;
 
-  const result = await geminiModel.generateContent(prompt);
+  const result = await summaryModel.generateContent(prompt);
   return result.response.text();
 }
 
@@ -101,6 +101,6 @@ Si el usuario te pide crearáá uno o varios eventos, debes incluirlos en un blo
 \`\`\`
 Puedes a�adir texto normal antes y despu�s del JSON para hablar con el usuario.`;
 
-  const result = await geminiModel.generateContent(prompt);
+  const result = await chatModel.generateContent(prompt);
   return result.response.text();
 }
