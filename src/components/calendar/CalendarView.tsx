@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, format } from "date-fns";
@@ -93,7 +93,7 @@ export function CalendarView() {
         } else {
           const eventsToCreate = Array.isArray(parsedData) ? parsedData : [parsedData];
           if (eventsToCreate.length === 0) {
-            toast.error("No se detectó ningún evento válido.");
+            toast.error("No se detectÃ³ ningÃºn evento vÃ¡lido.");
             setParsingNL(false);
             return;
           }
@@ -107,7 +107,7 @@ export function CalendarView() {
             if (createRes.ok) successCount++;
           }
           if (successCount > 0) {
-            toast.success(`Â¡${successCount} evento(s) guardado(s)!`);
+            toast.success(`Ã‚Â¡${successCount} evento(s) guardado(s)!`);
             setNlInput("");
             fetchEvents();
           } else {
@@ -164,7 +164,7 @@ export function CalendarView() {
   const views: { key: CalendarView; label: string }[] = [
     { key: "month", label: "Mes" },
     { key: "week", label: "Semana" },
-    { key: "day", label: "DÃ­a" },
+    { key: "day", label: "Día" },
   ];
 
   return (
@@ -299,5 +299,6 @@ export function CalendarView() {
     </div>
   );
 }
+
 
 
