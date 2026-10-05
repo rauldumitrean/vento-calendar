@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, format } from "date-fns";
@@ -124,7 +124,8 @@ export function CalendarView() {
   const handleEventSave = async (eventData: Partial<CalendarEvent>) => {
     try {
       const method = selectedEvent ? "PUT" : "POST";
-      const url = selectedEvent ? `/api/events/${selectedEvent.id}` : "/api/events";
+      const realId = selectedEvent ? selectedEvent.id.split('_')[0] : "";
+      const url = selectedEvent ? `/api/events/${realId}` : "/api/events";
 
       const res = await fetch(url, {
         method,
@@ -146,7 +147,8 @@ export function CalendarView() {
 
   const handleEventDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/events/${id}`, { method: "DELETE" });
+      const realId = id.split('_')[0];
+      const res = await fetch(`/api/events/${realId}`, { method: "DELETE" });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || "Error");
