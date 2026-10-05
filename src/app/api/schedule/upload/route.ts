@@ -29,14 +29,14 @@ const model = genAI.getGenerativeModel({
 
 export const maxDuration = 60;
 
-const EXTRACTION_PROMPT = `Eres un experto analizando horarios acadÃ©micos. 
+const EXTRACTION_PROMPT = `Eres un experto analizando horarios académicos. 
 Analiza el documento/imagen y extrae TODAS las clases o asignaturas que puedías ver.
 
 El horario puede estar en formato de tabla, lista, imagen escaneada, o cualquier otro formato.
-Incluso si la calidad es baja o estÃ¡ borroso, intenta extraer la mÃ¡xima informaciÃ³n posible.
-Usa tus capacidades de visiÃ³n para leer cualquier texto dentro de la imagen.
+Incluso si la calidad es baja o está borroso, intenta extraer la máxima información posible.
+Usa tus capacidades de visión para leeráá cualquier texto dentro de la imagen.
 
-Devuelve ÃšNICAMENTE un JSON array vÃ¡lido. Sin markdown, sin explicaciones, solo el JSON:
+Devuelve íšNICAMENTE un JSON array válido. Sin markdown, sin explicaciones, solo el JSON:
 
 [
   {
@@ -49,13 +49,13 @@ Devuelve ÃšNICAMENTE un JSON array vÃ¡lido. Sin markdown, sin explicaciones,
 ]
 
 REGLAS IMPORTANTES:
-- dayOfWeek: 1=Lunes, 2=Martes, 3=MiÃ©rcoles, 4=Jueves, 5=Viernes, 6=SÃ¡bado, 0=Domingo
+- dayOfWeek: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 0=Domingo
 - startTime y endTime en formato HH:mm (24 horas)
 - location puede ser null si no aparece
 - Si la misma asignatura tiene varias clases a la semana, incluye una entrada por cada clase
-- Si el horario es semanal recurrente, extrae todos los dÃ­as
+- Si el horario es semanal recurrente, extrae todos los días
 - Si ves abreviaturas de asignaturas, usa el nombre completo si lo puedes deducir
-- Devuelve [] SOLO si el documento no contiene ningÃºn tipo de horario
+- Devuelve [] SOLO si el documento no contiene ningún tipo de horario
 - NO inventes datos, solo extrae lo que ves
 
 Ahora analiza el documento y devuelve el JSON:`;
@@ -116,12 +116,12 @@ export async function POST(req: NextRequest) {
               mimeType: file.type,
             },
           },
-          `Eres un asistente OCR y extractor de datos. Este archivo puede contener imÃ¡genes escaneadías o texto de un horario acadÃ©mico.
-Usa tus capacidades de visiÃ³n para leer cualquier tabla, cuadrÃ­cula, imagen o texto que veas.
+          `Eres un asistente OCR y extractor de datos. Este archivo puede contener imágenes escaneadías o texto de un horario académico.
+Usa tus capacidades de visión para leeráá cualquier tabla, cuadrícula, imagen o texto que veas.
 Extrae todías las clases que puedías identificar.
 Responde SOLO con un JSON array con este formato:
 [{"title":"Nombre","dayOfWeek":1,"startTime":"09:00","endTime":"10:00","location":null}]
-dayOfWeek: 1=Lunes, 2=Martes, 3=MiÃ©rcoles, 4=Jueves, 5=Viernes, 6=SÃ¡bado, 0=Domingo
+dayOfWeek: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 0=Domingo
 Si no hay horario devuelve: []`,
         ]);
         responseText = result.response.text().trim();

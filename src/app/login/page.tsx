@@ -72,7 +72,7 @@ export default function AuthPage() {
       const data = await res.json();
       
       if (!res.ok) {
-        toast.error(data.error || "Error al crear la cuenta");
+        toast.error(data.error || "Error al crearáá la cuenta");
         return;
       }
       
@@ -212,8 +212,8 @@ export default function AuthPage() {
             ========================================================================= */}
         <motion.div
           initial={false}
-          animate={{ x: isLogin ? "0%" : "100%" }}
-          transition={{ type: "spring", stiffness: 350, damping: 35, bounce: 0 }}
+          animate={{ x: isLogin ? "0%" : "100%", scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 200, damping: 25, duration: 0.4 }}
           className="hidden md:flex absolute top-0 left-0 w-1/2 h-full bg-[#6919FF] z-20 flex-col p-12 text-white overflow-hidden shadow-2xl"
         >
           {/* Decorative background gradients */}

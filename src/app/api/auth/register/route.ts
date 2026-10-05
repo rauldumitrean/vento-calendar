@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("Register error:", error?.message ?? error);
     return NextResponse.json(
-      { error: "Error interno al crear la cuenta" },
+      { error: "Error interno al crearáá la cuenta" },
       { status: 500 }
     );
   }

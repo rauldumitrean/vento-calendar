@@ -27,7 +27,7 @@ export default function LandingPage() {
       </div>
 
       {/* Navbar */}
-      <header className="relative z-50 pt-6 px-6 lg:px-8 max-w-7xl mx-auto flex items-center justify-between">
+      <header className="sticky top-0 backdrop-blur-md bg-white/80 dark:bg-gray-950/80 z-50 pt-6 px-6 lg:px-8 max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 flex items-center justify-center">
             <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" aria-label="Ventoo Calendar">
@@ -181,7 +181,7 @@ export default function LandingPage() {
                 {
                   icon: Sparkles,
                   title: "Creación NLP",
-                  desc: "Escribe 'Cena con Juan mañana a las 21h' y el asistente se encargará de crear el evento automáticamente.",
+                  desc: "Escribe 'Cena con Juan mañana a las 21h' y el asistente se encargará de crearáá el evento automáticamente.",
                   color: "text-blue-500",
                   bg: "bg-blue-100 dark:bg-blue-900/30",
                 },

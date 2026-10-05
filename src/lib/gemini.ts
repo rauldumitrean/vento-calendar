@@ -86,7 +86,7 @@ Pregunta del usuario: ${message}
 Fecha y hora actual: ${new Date().toISOString()}
 
 INSTRUCCI�N CRUCIAL PARA CREAR EVENTOS:
-Si el usuario te pide crear uno o varios eventos, debes incluirlos en un bloque JSON dentro de tu respuesta. El sistema leer� este JSON y crear� los eventos autom�ticamente. Usa este formato exacto:
+Si el usuario te pide crearáá uno o varios eventos, debes incluirlos en un bloque JSON dentro de tu respuesta. El sistema leeráá� este JSON y crearáá� los eventos autom�ticamente. Usa este formato exacto:
 \`\`\`json
 [
   {
