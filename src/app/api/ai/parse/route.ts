@@ -12,11 +12,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(parsed);
   } catch (error: any) {
     console.error("AI parse error FULL:", error, "\nMessage:", error.message, "\nStack:", error.stack);
-    const fs = require('fs');
-    try {
-      fs.writeFileSync('C:/ventoo-calendar/error-ai.txt', String(error?.stack || error?.message || error));
-      fs.writeFileSync('E:/08. Proyectos/ventoo-calendar/error-ai.txt', String(error?.stack || error?.message || error));
-    } catch(e) {}
     return NextResponse.json({ error: String(error?.message || "Error al interpretar") }, { status: 500 });
   }
 }

@@ -132,24 +132,30 @@ export function CalendarView() {
         body: JSON.stringify(eventData),
       });
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Error");
+      }
       toast.success(selectedEvent ? "Evento actualizado" : "Evento creado");
       setShowModal(false);
       fetchEvents();
-    } catch {
-      toast.error("Error guardando el evento");
+    } catch (err: any) {
+      toast.error(err.message || "Error guardando el evento");
     }
   };
 
   const handleEventDelete = async (id: string) => {
     try {
       const res = await fetch(`/api/events/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Error");
+      }
       toast.success("Evento eliminado");
       setShowModal(false);
       fetchEvents();
-    } catch {
-      toast.error("Error eliminando el evento");
+    } catch (err: any) {
+      toast.error(err.message || "Error eliminando el evento");
     }
   };
 

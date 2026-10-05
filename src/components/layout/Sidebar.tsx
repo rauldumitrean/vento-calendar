@@ -142,6 +142,51 @@ export function Sidebar({ user }: SidebarProps) {
         </div>
       </aside>
 
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 pb-safe">
+        <div className="flex justify-around items-center p-2">
+          {navItems.map(({ href, label, icon: Icon }) => {
+            const isActive = pathname === href || pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-all",
+                  isActive
+                    ? "text-blue-600 dark:text-blue-400"
+                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                )}
+              >
+                <Icon className={cn("w-6 h-6 mb-1", isActive ? "fill-blue-100 dark:fill-blue-900/30" : "")} />
+                <span className="text-[10px] font-medium">{label}</span>
+              </Link>
+            );
+          })}
+          
+          <button
+            onClick={() => setShowAI(true)}
+            className="flex flex-col items-center justify-center w-16 h-12 rounded-xl text-purple-600 dark:text-purple-400 transition-all"
+          >
+            <Sparkles className="w-6 h-6 mb-1" />
+            <span className="text-[10px] font-medium">IA</span>
+          </button>
+          
+          <Link
+            href="/settings"
+            className={cn(
+              "flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-all",
+              pathname.startsWith("/settings")
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            )}
+          >
+            <Settings className="w-6 h-6 mb-1" />
+            <span className="text-[10px] font-medium">Ajustes</span>
+          </Link>
+        </div>
+      </nav>
+
       {/* AI Chat Modal */}
       {showAI && <AIChat onClose={() => setShowAI(false)} />}
     </>

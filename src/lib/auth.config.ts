@@ -14,6 +14,7 @@ export const authConfig: NextAuthConfig = {
       const isLoggedIn = !!auth?.user;
       const isAuthPage = nextUrl.pathname.startsWith("/login");
       if (isAuthPage) return isLoggedIn ? Response.redirect(new URL("/calendar", nextUrl)) : true;
+      if (nextUrl.pathname === "/") return true;
       return isLoggedIn;
     },
     async jwt({ token, user }) {
