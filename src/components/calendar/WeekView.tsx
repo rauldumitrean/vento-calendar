@@ -41,15 +41,15 @@ export function WeekView({ currentDate, events, onSlotClick, onEventClick }: Wee
       {/* Header */}
       <div className="flex-shrink-0 sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="flex">
-          <div className="w-16 flex-shrink-0" />
+          <div className="w-10 md:w-16 flex-shrink-0" />
           {days.map((day, i) => {
             const isToday = isSameDayCheck(day, today);
             const allDay = getAllDayEventsForDay(day);
             return (
               <div key={i} className="flex-1 text-center py-2 border-l border-gray-100 dark:border-gray-800">
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">{DAY_NAMES_SHORT[i]}</p>
+                <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase">{DAY_NAMES_SHORT[i]}</p>
                 <div className={cn(
-                  "mx-auto w-8 h-8 flex items-center justify-center rounded-full text-sm font-semibold mt-0.5",
+                  "mx-auto w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-full text-xs md:text-sm font-semibold mt-0.5",
                   isToday ? "bg-blue-600 text-white" : "text-gray-900 dark:text-gray-100"
                 )}>
                   {format(day, "d")}
@@ -60,7 +60,7 @@ export function WeekView({ currentDate, events, onSlotClick, onEventClick }: Wee
                     <div
                       key={e.id}
                       onClick={() => onEventClick(e)}
-                      className={cn("mx-1 mt-1 px-1 py-0.5 rounded text-xs truncate cursor-pointer", colors.bg, colors.text)}
+                      className={cn("mx-0.5 md:mx-1 mt-1 px-0.5 md:px-1 py-0.5 rounded text-[9px] md:text-xs truncate cursor-pointer", colors.bg, colors.text)}
                     >
                       {e.title}
                     </div>
@@ -75,10 +75,10 @@ export function WeekView({ currentDate, events, onSlotClick, onEventClick }: Wee
       {/* Time grid */}
       <div className="flex flex-1">
         {/* Hours */}
-        <div className="w-16 flex-shrink-0">
+        <div className="w-10 md:w-16 flex-shrink-0">
           {HOURS.map(h => (
-            <div key={h} className="h-16 border-b border-gray-100 dark:border-gray-800 flex items-start justify-end pr-2 pt-1">
-              <span className="text-xs text-gray-400">{h === 0 ? "" : `${h}:00`}</span>
+            <div key={h} className="h-16 border-b border-gray-100 dark:border-gray-800 flex items-start justify-end pr-1 md:pr-2 pt-1">
+              <span className="text-[10px] md:text-xs text-gray-400">{h === 0 ? "" : `${h}:00`}</span>
             </div>
           ))}
         </div>
@@ -111,12 +111,12 @@ export function WeekView({ currentDate, events, onSlotClick, onEventClick }: Wee
                   style={style}
                   onClick={e => { e.stopPropagation(); onEventClick(event); }}
                   className={cn(
-                    "absolute left-1 right-1 rounded-lg px-1.5 py-1 cursor-pointer hover:opacity-90 transition shadow-sm overflow-hidden",
+                    "absolute left-0.5 right-0.5 md:left-1 md:right-1 rounded md:rounded-lg px-0.5 md:px-1.5 py-0.5 md:py-1 cursor-pointer hover:opacity-90 transition shadow-sm overflow-hidden",
                     colors.bg, colors.text, `border-l-2 ${colors.border}`
                   )}
                 >
-                  <p className="text-xs font-semibold truncate">{event.title}</p>
-                  <p className="text-xs opacity-75">
+                  <p className="text-[9px] md:text-xs font-semibold truncate leading-tight">{event.title}</p>
+                  <p className="hidden md:block text-xs opacity-75">
                     {format(new Date(event.startDate), "HH:mm")} – {format(new Date(event.endDate), "HH:mm")}
                   </p>
                 </div>

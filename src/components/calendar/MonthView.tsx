@@ -53,7 +53,7 @@ export function MonthView({ currentDate, events, onDayClick, onEventClick }: Mon
               key={i}
               onClick={() => onDayClick(day)}
               className={cn(
-                "border-r border-b border-gray-100 dark:border-gray-800 p-1.5 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 min-h-[80px]",
+                "border-r border-b border-gray-100 dark:border-gray-800 p-1 md:p-1.5 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 min-h-[60px] md:min-h-[80px]",
                 !isCurrentMonth && "bg-gray-50/50 dark:bg-gray-900/30",
                 isWeekend && isCurrentMonth && "bg-blue-50/20 dark:bg-blue-900/5"
               )}
@@ -61,7 +61,7 @@ export function MonthView({ currentDate, events, onDayClick, onEventClick }: Mon
               {/* Day number */}
               <div className="flex justify-center mb-1">
                 <span className={cn(
-                  "w-7 h-7 flex items-center justify-center rounded-full text-sm font-medium",
+                  "w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-xs md:text-sm font-medium",
                   isToday && "bg-blue-600 text-white",
                   !isToday && isCurrentMonth && "text-gray-900 dark:text-gray-100",
                   !isToday && !isCurrentMonth && "text-gray-400 dark:text-gray-600"
@@ -70,8 +70,8 @@ export function MonthView({ currentDate, events, onDayClick, onEventClick }: Mon
                 </span>
               </div>
 
-              {/* Events */}
-              <div className="space-y-0.5">
+              {/* Desktop Events */}
+              <div className="hidden md:block space-y-0.5">
                 {dayEvents.slice(0, 3).map(event => {
                   const colors = EVENT_COLORS[event.color] ?? EVENT_COLORS.blue;
                   return (
@@ -91,6 +91,23 @@ export function MonthView({ currentDate, events, onDayClick, onEventClick }: Mon
                   <div className="text-xs text-gray-500 dark:text-gray-400 pl-1.5">
                     +{dayEvents.length - 3} más
                   </div>
+                )}
+              </div>
+
+              {/* Mobile Events (Dots) */}
+              <div className="md:hidden flex flex-wrap justify-center gap-1 mt-1 px-1">
+                {dayEvents.slice(0, 4).map(event => {
+                  const colors = EVENT_COLORS[event.color] ?? EVENT_COLORS.blue;
+                  return (
+                    <div
+                      key={event.id}
+                      className={cn("w-1.5 h-1.5 rounded-full", colors.bg.replace('bg-', 'bg-').replace('/10', '').replace('/20', ''))} 
+                      style={{ backgroundColor: event.color === 'blue' ? '#3b82f6' : event.color === 'red' ? '#ef4444' : event.color === 'green' ? '#22c55e' : event.color === 'yellow' ? '#eab308' : '#8b5cf6' }}
+                    />
+                  );
+                })}
+                {dayEvents.length > 4 && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
                 )}
               </div>
             </div>

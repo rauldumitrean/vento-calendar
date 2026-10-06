@@ -2,9 +2,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
-const nlpModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-const chatModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-const summaryModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const nlpModel = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
+const chatModel = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
+const summaryModel = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
 
 // ── Parse natural language into event ─────────────────────────────────────
 export async function parseNaturalLanguageEvent(text: string, userTimezone: string = "Europe/Madrid") {
