@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, addYears, subYears, format } from "date-fns";
+import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, addYears, subYears, format, startOfWeek, startOfMonth, startOfYear, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Plus, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -132,6 +132,7 @@ export function CalendarView() {
 
   // Wheel scroll debounce
   const lastWheelTime = useRef<number>(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (Math.abs(e.deltaY) <= 20) return;
     
@@ -202,13 +203,22 @@ export function CalendarView() {
     if (!touchStart || !touchEnd) return;
     const distanceX = touchStart.x - touchEnd.x;
     const distanceY = touchStart.y - touchEnd.y;
-    const isLeftSwipe = distanceX > minSwipeDistance;
-    const isRightSwipe = distanceX < -minSwipeDistance;
+    const isUpSwipe = distanceY > minSwipeDistance;
+    const isDownSwipe = distanceY < -minSwipeDistance;
     
-    if (Math.abs(distanceX) > Math.abs(distanceY)) {
-      if (isLeftSwipe) {
+    if (Math.abs(distanceY) > Math.abs(distanceX)) {
+      const target = scrollRef.current;
+      if (target) {
+        const isAtTop = target.scrollTop <= 0;
+        const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 1;
+        
+        if (isUpSwipe && !isAtBottom) return;
+        if (isDownSwipe && !isAtTop) return;
+      }
+
+      if (isUpSwipe) {
         navigate("next");
-      } else if (isRightSwipe) {
+      } else if (isDownSwipe) {
         navigate("prev");
       }
     }
@@ -260,6 +270,15 @@ export function CalendarView() {
     { key: "week", label: "Semana" },
     { key: "day", label: "Día" },
   ];
+
+  const getAnimationKey = () => {
+    switch (view) {
+      case "year": return `year-${startOfYear(currentDate).getTime()}`;
+      case "month": return `month-${startOfMonth(currentDate).getTime()}`;
+      case "week": return `week-${startOfWeek(currentDate).getTime()}`;
+      case "day": return `day-${startOfDay(currentDate).getTime()}`;
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -380,6 +399,7 @@ export function CalendarView() {
 
       {/* Calendar body */}
       <div 
+        ref={scrollRef}
         className="flex-1 overflow-auto touch-pan-y"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -397,7 +417,7 @@ export function CalendarView() {
         ) : (
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
-              key={view + currentDate.getTime()}
+              key={getAnimationKey()}
               custom={direction}
               variants={{
                 initial: (dir: number) => ({
