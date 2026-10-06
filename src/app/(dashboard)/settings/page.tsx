@@ -123,19 +123,38 @@ export default function SettingsPage() {
         </div>
 
         <div className="bg-white dark:bg-gray-900 shadow-sm rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Apariencia</h2>
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Temas y Apariencia</h2>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tema</label>
-            <select
-              value={theme}
-              onChange={e => setTheme(e.target.value)}
-              className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="system">Sistema</option>
-              <option value="light">Claro</option>
-              <option value="dark">Oscuro</option>
-            </select>
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Selecciona un tema para la aplicación</label>
+            <div className="grid grid-cols-3 gap-4">
+              <button
+                type="button"
+                onClick={() => setTheme("light")}
+                className={`p-4 rounded-xl border-2 text-center transition-all ${theme === "light" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"}`}
+              >
+                <div className="w-full h-12 bg-white rounded-lg border border-gray-200 mb-2 shadow-sm" />
+                <span className="text-sm font-medium">Claro</span>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setTheme("dark")}
+                className={`p-4 rounded-xl border-2 text-center transition-all ${theme === "dark" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"}`}
+              >
+                <div className="w-full h-12 bg-[#111827] rounded-lg border border-gray-700 mb-2 shadow-sm" />
+                <span className="text-sm font-medium">Oscuro</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTheme("system")}
+                className={`p-4 rounded-xl border-2 text-center transition-all ${theme === "system" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"}`}
+              >
+                <div className="w-full h-12 bg-gradient-to-r from-white to-[#111827] rounded-lg border border-gray-300 mb-2 shadow-sm" />
+                <span className="text-sm font-medium">Sistema</span>
+              </button>
+            </div>
           </div>
         </div>
 

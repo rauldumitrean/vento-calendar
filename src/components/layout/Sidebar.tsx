@@ -6,11 +6,11 @@ import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   CalendarDays,
-  FileUp,
+  CalendarClock,
   CheckSquare,
   LogOut,
   Settings,
-  Sparkles,
+  Bot,
 } from "lucide-react";
 import type { User } from "next-auth";
 import { useState } from "react";
@@ -60,7 +60,7 @@ function VentooLogo({ className }: { className?: string }) {
 
 const navItems = [
   { href: "/calendar", label: "Calendario", icon: CalendarDays },
-  { href: "/schedule", label: "Horario", icon: FileUp },
+  { href: "/schedule", label: "Horario", icon: CalendarClock },
   { href: "/tasks", label: "Tareas", icon: CheckSquare },
 ];
 
@@ -107,7 +107,7 @@ export function Sidebar({ user }: SidebarProps) {
           onClick={() => setShowAI(true)}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all mb-2"
         >
-          <Sparkles className="w-5 h-5 flex-shrink-0" />
+          <Bot className="w-5 h-5 flex-shrink-0" />
           Asistente IA
         </button>
 
@@ -168,7 +168,7 @@ export function Sidebar({ user }: SidebarProps) {
             onClick={() => setShowAI(true)}
             className="flex flex-col items-center justify-center w-16 h-12 rounded-xl text-purple-600 dark:text-purple-400 transition-all"
           >
-            <Sparkles className="w-6 h-6 mb-1" />
+            <Bot className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium">IA</span>
           </button>
           

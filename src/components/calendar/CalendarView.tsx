@@ -204,10 +204,10 @@ export function CalendarView() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex-shrink-0 bg-transparent border-b border-gray-200/50 dark:border-gray-800/50 backdrop-blur-md px-6 py-3">
-        <div className="flex items-center justify-between gap-4">
+      <div className="flex-shrink-0 bg-transparent border-b border-gray-200/50 dark:border-gray-800/50 backdrop-blur-md px-4 sm:px-6 py-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Left: nav */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3">
             <button
               onClick={() => setCurrentDate(new Date())}
               className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition"
@@ -261,7 +261,7 @@ export function CalendarView() {
           </div>
 
           {/* Right: view switcher + new event */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-3">
             {/* NL Input */}
             <form onSubmit={handleNLSubmit} className="hidden lg:flex items-center gap-2">
               <div className="relative">
