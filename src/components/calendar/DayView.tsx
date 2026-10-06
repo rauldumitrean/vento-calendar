@@ -33,9 +33,9 @@ export function DayView({ currentDate, events, onSlotClick, onEventClick }: DayV
   };
 
   return (
-    <div className="flex flex-col h-full overflow-auto">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+      <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <div className={cn(
             "w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold",

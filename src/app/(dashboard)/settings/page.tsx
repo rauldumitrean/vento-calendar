@@ -40,7 +40,8 @@ export default function SettingsPage() {
       })
       .catch(() => toast.error("Error cargando ajustes"))
       .finally(() => setLoading(false));
-  }, [setActiveTheme, activeTheme]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +136,7 @@ export default function SettingsPage() {
             <div className="grid grid-cols-3 gap-4">
               <button
                 type="button"
-                onClick={() => setSettings({ ...settings, theme: "light" })}
+                onClick={() => { setSettings({ ...settings, theme: "light" }); setActiveTheme("light"); }}
                 className={`p-4 rounded-xl border-2 text-center transition-all ${settings.theme === "light" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"}`}
               >
                 <div className="w-full h-12 bg-white rounded-lg border border-gray-200 mb-2 shadow-sm" />
@@ -144,7 +145,7 @@ export default function SettingsPage() {
               
               <button
                 type="button"
-                onClick={() => setSettings({ ...settings, theme: "dark" })}
+                onClick={() => { setSettings({ ...settings, theme: "dark" }); setActiveTheme("dark"); }}
                 className={`p-4 rounded-xl border-2 text-center transition-all ${settings.theme === "dark" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"}`}
               >
                 <div className="w-full h-12 bg-[#111827] rounded-lg border border-gray-700 mb-2 shadow-sm" />
@@ -153,7 +154,7 @@ export default function SettingsPage() {
 
               <button
                 type="button"
-                onClick={() => setSettings({ ...settings, theme: "system" })}
+                onClick={() => { setSettings({ ...settings, theme: "system" }); setActiveTheme("system"); }}
                 className={`p-4 rounded-xl border-2 text-center transition-all ${settings.theme === "system" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"}`}
               >
                 <div className="w-full h-12 bg-gradient-to-r from-white to-[#111827] rounded-lg border border-gray-300 mb-2 shadow-sm" />

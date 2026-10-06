@@ -129,14 +129,22 @@ export function CalendarView() {
 
   // Wheel scroll debounce
   const lastWheelTime = useRef<number>(0);
-  const handleWheel = (e: React.WheelEvent) => {
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (Math.abs(e.deltaY) <= 20) return;
+    
+    const target = e.currentTarget;
+    const isAtTop = target.scrollTop <= 0;
+    const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 1;
+
+    if (e.deltaY > 0 && !isAtBottom) return;
+    if (e.deltaY < 0 && !isAtTop) return;
+
     const now = Date.now();
     if (now - lastWheelTime.current < 400) return;
-    if (Math.abs(e.deltaY) > 20) {
-      if (e.deltaY > 0) navigate("next");
-      else navigate("prev");
-      lastWheelTime.current = now;
-    }
+    
+    if (e.deltaY > 0) navigate("next");
+    else navigate("prev");
+    lastWheelTime.current = now;
   };
 
   // Swipe & Pinch detection
