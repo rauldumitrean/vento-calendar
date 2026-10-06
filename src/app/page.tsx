@@ -1,4 +1,4 @@
-﻿/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
@@ -54,7 +54,7 @@ export default function LandingPage() {
         </div>
         <nav className="flex items-center gap-4">
           <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition">
-            Iniciar SesiÃ³n
+            Iniciar Sesión
           </Link>
           <Link href="/calendar" className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium text-sm hover:scale-105 transition-transform shadow-xl shadow-gray-900/20 dark:shadow-white/10">
             Abrir App
@@ -85,8 +85,8 @@ export default function LandingPage() {
             </motion.h1>
             
             <motion.p variants={itemVariants} className="text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-10 max-w-2xl leading-relaxed">
-              La forma mÃ¡s fluida y rÃ¡pida de gestionar tus eventos y tareas. 
-              PÃ­dele a la IA que cree tu horario en lenguaje natural. Sincronizado en todos tus dispositivos.
+              La forma más fluida y rápida de gestionar tus eventos y tareas. 
+              Pídele a la IA que cree tu horario en lenguaje natural. Sincronizado en todos tus dispositivos.
             </motion.p>
             
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4">
@@ -129,7 +129,7 @@ export default function LandingPage() {
               <div className="flex gap-3">
                 <div className="w-1.5 rounded-full bg-blue-500" />
                 <div>
-                  <h4 className="font-semibold text-sm">DiseÃ±o de MVP</h4>
+                  <h4 className="font-semibold text-sm">Diseño de MVP</h4>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">10:00 - 12:30</p>
                 </div>
               </div>
@@ -148,7 +148,7 @@ export default function LandingPage() {
                 <p className="text-xs font-medium">IA de Ventoo</p>
               </div>
               <p className="text-sm font-medium text-gray-800 dark:text-gray-200 leading-snug">
-                "He aÃ±adido la reuniÃ³n del viernes a las 16:00 y he pospuesto tus tareas de diseÃ±o."
+                "He añadido la reunión del viernes a las 16:00 y he pospuesto tus tareas de diseño."
               </p>
             </motion.div>
             
@@ -172,7 +172,7 @@ export default function LandingPage() {
             <div className="text-center mb-20">
               <h2 className="text-3xl font-bold mb-4">Todo lo que necesitas, en un solo lugar</h2>
               <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                No mÃ¡s aplicaciones separadas. Combina tu calendario y tus listas de tareas potenciados con Inteligencia Artificial.
+                No más aplicaciones separadas. Combina tu calendario y tus listas de tareas potenciados con Inteligencia Artificial.
               </p>
             </div>
 
@@ -180,43 +180,43 @@ export default function LandingPage() {
               {[
                 {
                   icon: Sparkles,
-                  title: "CreaciÃ³n NLP",
-                  desc: "Escribe 'Cena con Juan maÃ±ana a las 21h' y el asistente se encargarÃ¡ de crearÃ¡Ã¡ el evento automÃ¡ticamente.",
+                  title: "Creación NLP",
+                  desc: "Escribe 'Cena con Juan mañana a las 21h' y el asistente se encargará de crearáá el evento automáticamente.",
                   color: "text-blue-500",
                   bg: "bg-blue-100 dark:bg-blue-900/30",
                 },
                 {
                   icon: CheckSquare,
                   title: "Tareas Integradas",
-                  desc: "Gestiona exÃ¡menes, entregas y tareas pendientes con prioridades. VisualÃ­zalas junto a tus eventos.",
+                  desc: "Gestiona exámenes, entregas y tareas pendientes con prioridades. Visualízalas junto a tus eventos.",
                   color: "text-emerald-500",
                   bg: "bg-emerald-100 dark:bg-emerald-900/30",
                 },
                 {
                   icon: Smartphone,
-                  title: "SincronizaciÃ³n Real",
-                  desc: "Mueve un evento en tu ordenador y velo actualizarse al instante en tu mÃ³vil. (SSE In-Memory).",
+                  title: "Sincronización Real",
+                  desc: "Mueve un evento en tu ordenador y velo actualizarse al instante en tu móvil. (SSE In-Memory).",
                   color: "text-blue-500",
                   bg: "bg-blue-100 dark:bg-blue-900/30",
                 },
                 {
                   icon: Mail,
                   title: "Resumen Diario",
-                  desc: "Recibe un correo automÃ¡tico a primera hora de la maÃ±ana con tu agenda del dÃ­a para no perderte nada.",
+                  desc: "Recibe un correo automático a primera hora de la mañana con tu agenda del día para no perderte nada.",
                   color: "text-orange-500",
                   bg: "bg-orange-100 dark:bg-orange-900/30",
                 },
                 {
                   icon: ShieldCheck,
-                  title: "AuditorÃ­a de Accesos",
-                  desc: "Control total de tu cuenta. Recibe notificaciones y registra todos los inicios y cierres de sesiÃ³n.",
+                  title: "Auditoría de Accesos",
+                  desc: "Control total de tu cuenta. Recibe notificaciones y registra todos los inicios y cierres de sesión.",
                   color: "text-red-500",
                   bg: "bg-red-100 dark:bg-red-900/30",
                 },
                 {
                   icon: Zap,
                   title: "Flujo Apple-like",
-                  desc: "Una interfaz limpia, rÃ¡pida y amigable, con un diseÃ±o fluido inspirado en los estÃ¡ndares de Apple.",
+                  desc: "Una interfaz limpia, rápida y amigable, con un diseño fluido inspirado en los estándares de Apple.",
                   color: "text-gray-700 dark:text-gray-300",
                   bg: "bg-gray-100 dark:bg-gray-800",
                 },
@@ -250,7 +250,7 @@ export default function LandingPage() {
           <div className="relative max-w-4xl mx-auto px-6 text-center text-white">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">Empieza a organizar tu vida hoy.</h2>
             <p className="text-blue-100 text-lg mb-10 max-w-2xl mx-auto">
-              Ãšnete y descubre cÃ³mo la Inteligencia Artificial puede ahorrarte horas de gestiÃ³n a la semana. Accede con tu cuenta de Ventoo.
+              Únete y descubre cómo la Inteligencia Artificial puede ahorrarte horas de gestión a la semana. Accede con tu cuenta de Ventoo.
             </p>
             <Link href="/calendar" className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-blue-600 font-bold text-lg hover:bg-gray-50 hover:scale-105 transition-all shadow-xl shadow-black/10">
               Abrir Calendario
@@ -266,11 +266,10 @@ export default function LandingPage() {
           Ventoo Calendar
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Â© 2026 Ventoo. Todos los derechos reservados.
+          © 2026 Ventoo. Todos los derechos reservados.
         </p>
       </footer>
     </div>
   );
 }
-
 
