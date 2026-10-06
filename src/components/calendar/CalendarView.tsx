@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, addYears, subYears, format } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Plus, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
 import { DayView } from "./DayView";
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 
 export function CalendarView() {
   const [view, setView] = useState<CalendarView>("month");
+  const [direction, setDirection] = useState(1);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,11 +66,12 @@ export function CalendarView() {
   }, [fetchEvents]);
 
   // Navigation
-  const navigate = (direction: "prev" | "next") => {
-    if (view === "year") setCurrentDate(d => direction === "next" ? addYears(d, 1) : subYears(d, 1));
-    else if (view === "month") setCurrentDate(d => direction === "next" ? addMonths(d, 1) : subMonths(d, 1));
-    else if (view === "week") setCurrentDate(d => direction === "next" ? addWeeks(d, 1) : subWeeks(d, 1));
-    else setCurrentDate(d => direction === "next" ? addDays(d, 1) : subDays(d, 1));
+  const navigate = (dir: "prev" | "next") => {
+    setDirection(dir === "next" ? 1 : -1);
+    if (view === "year") setCurrentDate(d => dir === "next" ? addYears(d, 1) : subYears(d, 1));
+    else if (view === "month") setCurrentDate(d => dir === "next" ? addMonths(d, 1) : subMonths(d, 1));
+    else if (view === "week") setCurrentDate(d => dir === "next" ? addWeeks(d, 1) : subWeeks(d, 1));
+    else setCurrentDate(d => dir === "next" ? addDays(d, 1) : subDays(d, 1));
   };
 
   const headerTitle = () => {
@@ -266,7 +269,11 @@ export function CalendarView() {
           {/* Left: nav */}
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3">
             <button
-              onClick={() => setCurrentDate(new Date())}
+              onClick={() => {
+                const now = new Date();
+                setDirection(now > currentDate ? 1 : -1);
+                setCurrentDate(now);
+              }}
               className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition"
             >
               Hoy
@@ -303,7 +310,9 @@ export function CalendarView() {
                       <button
                         key={i}
                         onClick={() => {
-                          setCurrentDate(new Date(pickerYear, i, 1));
+                          const newDate = new Date(pickerYear, i, 1);
+                          setDirection(newDate > currentDate ? 1 : -1);
+                          setCurrentDate(newDate);
                           setShowDatePicker(false);
                         }}
                         className="text-sm p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded capitalize truncate"
@@ -386,39 +395,67 @@ export function CalendarView() {
             </div>
           </div>
         ) : (
-          <>
-            {view === "year" && (
-              <YearView
-                currentDate={currentDate}
-                events={events}
-                onMonthClick={(date) => { setCurrentDate(date); setView("month"); }}
-              />
-            )}
-            {view === "month" && (
-              <MonthView
-                currentDate={currentDate}
-                events={events}
-                onDayClick={(date) => { setSelectedDate(date); setSelectedEvent(null); setShowModal(true); }}
-                onEventClick={(event) => { setSelectedEvent(event); setShowModal(true); }}
-              />
-            )}
-            {view === "week" && (
-              <WeekView
-                currentDate={currentDate}
-                events={events}
-                onSlotClick={(date) => { setSelectedDate(date); setSelectedEvent(null); setShowModal(true); }}
-                onEventClick={(event) => { setSelectedEvent(event); setShowModal(true); }}
-              />
-            )}
-            {view === "day" && (
-              <DayView
-                currentDate={currentDate}
-                events={events}
-                onSlotClick={(date) => { setSelectedDate(date); setSelectedEvent(null); setShowModal(true); }}
-                onEventClick={(event) => { setSelectedEvent(event); setShowModal(true); }}
-              />
-            )}
-          </>
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={view + currentDate.getTime()}
+              custom={direction}
+              variants={{
+                initial: (dir: number) => ({
+                  y: dir * 50,
+                  opacity: 0
+                }),
+                animate: {
+                  y: 0,
+                  opacity: 1
+                },
+                exit: (dir: number) => ({
+                  y: dir * -50,
+                  opacity: 0
+                })
+              }}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.2 }}
+              className="h-full"
+            >
+              {view === "year" && (
+                <YearView
+                  currentDate={currentDate}
+                  events={events}
+                  onMonthClick={(date) => { 
+                    setDirection(date > currentDate ? 1 : -1);
+                    setCurrentDate(date); 
+                    setView("month"); 
+                  }}
+                />
+              )}
+              {view === "month" && (
+                <MonthView
+                  currentDate={currentDate}
+                  events={events}
+                  onDayClick={(date) => { setSelectedDate(date); setSelectedEvent(null); setShowModal(true); }}
+                  onEventClick={(event) => { setSelectedEvent(event); setShowModal(true); }}
+                />
+              )}
+              {view === "week" && (
+                <WeekView
+                  currentDate={currentDate}
+                  events={events}
+                  onSlotClick={(date) => { setSelectedDate(date); setSelectedEvent(null); setShowModal(true); }}
+                  onEventClick={(event) => { setSelectedEvent(event); setShowModal(true); }}
+                />
+              )}
+              {view === "day" && (
+                <DayView
+                  currentDate={currentDate}
+                  events={events}
+                  onSlotClick={(date) => { setSelectedDate(date); setSelectedEvent(null); setShowModal(true); }}
+                  onEventClick={(event) => { setSelectedEvent(event); setShowModal(true); }}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         )}
       </div>
 
