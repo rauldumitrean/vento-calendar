@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, format } from "date-fns";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, addYears, subYears, format } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Plus, Sparkles } from "lucide-react";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
 import { DayView } from "./DayView";
+import { YearView } from "./YearView";
 import { EventModal } from "./EventModal";
 import type { CalendarEvent, CalendarView } from "@/types";
 import toast from "react-hot-toast";
@@ -64,12 +65,14 @@ export function CalendarView() {
 
   // Navigation
   const navigate = (direction: "prev" | "next") => {
-    if (view === "month") setCurrentDate(d => direction === "next" ? addMonths(d, 1) : subMonths(d, 1));
+    if (view === "year") setCurrentDate(d => direction === "next" ? addYears(d, 1) : subYears(d, 1));
+    else if (view === "month") setCurrentDate(d => direction === "next" ? addMonths(d, 1) : subMonths(d, 1));
     else if (view === "week") setCurrentDate(d => direction === "next" ? addWeeks(d, 1) : subWeeks(d, 1));
     else setCurrentDate(d => direction === "next" ? addDays(d, 1) : subDays(d, 1));
   };
 
   const headerTitle = () => {
+    if (view === "year") return format(currentDate, "yyyy", { locale: es });
     if (view === "month") return format(currentDate, "MMMM yyyy", { locale: es });
     if (view === "week") return format(currentDate, "MMMM yyyy", { locale: es });
     return format(currentDate, "EEEE, d MMMM yyyy", { locale: es });
@@ -124,19 +127,64 @@ export function CalendarView() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
 
-  // Swipe detection
+  // Wheel scroll debounce
+  const lastWheelTime = useRef<number>(0);
+  const handleWheel = (e: React.WheelEvent) => {
+    const now = Date.now();
+    if (now - lastWheelTime.current < 400) return;
+    if (Math.abs(e.deltaY) > 20) {
+      if (e.deltaY > 0) navigate("next");
+      else navigate("prev");
+      lastWheelTime.current = now;
+    }
+  };
+
+  // Swipe & Pinch detection
+  const [touchStartDist, setTouchStartDist] = useState<number | null>(null);
   const [touchStart, setTouchStart] = useState<{x: number, y: number} | null>(null);
   const [touchEnd, setTouchEnd] = useState<{x: number, y: number} | null>(null);
 
   const minSwipeDistance = 50;
 
   const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY });
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      setTouchStartDist(dist);
+      setTouchStart(null);
+      setTouchEnd(null);
+    } else if (e.touches.length === 1) {
+      setTouchEnd(null);
+      setTouchStart({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY });
+      setTouchStartDist(null);
+    }
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY });
+    if (e.touches.length === 2 && touchStartDist !== null) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      if (Math.abs(dist - touchStartDist) > 50) {
+        if (dist > touchStartDist) {
+          // Zoom IN
+          if (view === "year") setView("month");
+          else if (view === "month") setView("week");
+          else if (view === "week") setView("day");
+        } else {
+          // Zoom OUT
+          if (view === "day") setView("week");
+          else if (view === "week") setView("month");
+          else if (view === "month") setView("year");
+        }
+        setTouchStartDist(null); // fire once per pinch
+      }
+    } else if (e.touches.length === 1 && touchStart) {
+      setTouchEnd({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY });
+    }
   };
 
   const onTouchEndHandler = () => {
@@ -196,6 +244,7 @@ export function CalendarView() {
   };
 
   const views: { key: CalendarView; label: string }[] = [
+    { key: "year", label: "Año" },
     { key: "month", label: "Mes" },
     { key: "week", label: "Semana" },
     { key: "day", label: "Día" },
@@ -318,6 +367,7 @@ export function CalendarView() {
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEndHandler}
+        onWheel={handleWheel}
       >
         {loading ? (
           <div className="h-full p-4 flex flex-col gap-4 animate-pulse">
@@ -329,6 +379,13 @@ export function CalendarView() {
           </div>
         ) : (
           <>
+            {view === "year" && (
+              <YearView
+                currentDate={currentDate}
+                events={events}
+                onMonthClick={(date) => { setCurrentDate(date); setView("month"); }}
+              />
+            )}
             {view === "month" && (
               <MonthView
                 currentDate={currentDate}

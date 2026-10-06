@@ -5,7 +5,7 @@ import { format, startOfMonth, endOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import type { CalendarEvent } from "@/types";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const DAY_NAMES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
@@ -19,6 +19,7 @@ interface MonthViewProps {
 export function MonthView({ currentDate, events, onDayClick, onEventClick }: MonthViewProps) {
   const days = getMonthDays(currentDate);
   const today = new Date();
+  const [mobilePopoverDay, setMobilePopoverDay] = useState<{ date: Date, events: CalendarEvent[] } | null>(null);
 
   const expandedEvents = useMemo(() => {
     const start = days[0];
@@ -48,10 +49,16 @@ export function MonthView({ currentDate, events, onDayClick, onEventClick }: Mon
           const isCurrentMonth = isSameMonthCheck(day, currentDate);
           const isWeekend = day.getDay() === 0 || day.getDay() === 6;
 
-          return (
+              return (
             <div
               key={i}
-              onClick={() => onDayClick(day)}
+              onClick={() => {
+                if (typeof window !== "undefined" && window.innerWidth < 768 && dayEvents.length > 0) {
+                  setMobilePopoverDay({ date: day, events: dayEvents });
+                } else {
+                  onDayClick(day);
+                }
+              }}
               className={cn(
                 "border-r border-b border-gray-100 dark:border-gray-800 p-1 md:p-1.5 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 min-h-[60px] md:min-h-[80px]",
                 !isCurrentMonth && "bg-gray-50/50 dark:bg-gray-900/30",
@@ -114,6 +121,54 @@ export function MonthView({ currentDate, events, onDayClick, onEventClick }: Mon
           );
         })}
       </div>
+
+      {/* Mobile Popover */}
+      {mobilePopoverDay && (
+        <div className="md:hidden fixed inset-0 z-[100] flex flex-col justify-end bg-black/50 animate-in fade-in duration-200" onClick={() => setMobilePopoverDay(null)}>
+          <div 
+            className="bg-white dark:bg-[#1C1C1E] w-full rounded-t-3xl p-5 shadow-2xl max-h-[80vh] overflow-auto pb-10 animate-in slide-in-from-bottom duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white capitalize tracking-tight">
+                {format(mobilePopoverDay.date, "EEEE, d MMMM", { locale: es })}
+              </h3>
+              <button 
+                onClick={() => setMobilePopoverDay(null)} 
+                className="w-8 h-8 flex items-center justify-center text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-3">
+              {mobilePopoverDay.events.map(event => {
+                const colors = EVENT_COLORS[event.color] ?? EVENT_COLORS.blue;
+                return (
+                  <div
+                    key={event.id}
+                    onClick={() => { setMobilePopoverDay(null); onEventClick(event); }}
+                    className={cn(
+                      "p-3 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col gap-1 shadow-sm active:scale-[0.98] transition-transform",
+                      colors.bg, colors.text
+                    )}
+                  >
+                    <div className="font-semibold text-sm">{event.title}</div>
+                    <div className="text-xs opacity-80 font-medium">
+                      {event.allDay ? "Todo el día" : `${format(new Date(event.startDate), "HH:mm")} - ${format(new Date(event.endDate), "HH:mm")}`}
+                    </div>
+                  </div>
+                );
+              })}
+              <button 
+                className="w-full mt-4 p-3 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 font-medium text-sm text-center hover:bg-gray-50 dark:hover:bg-gray-800 transition active:scale-[0.98]"
+                onClick={() => { setMobilePopoverDay(null); onDayClick(mobilePopoverDay.date); }}
+              >
+                + Añadir evento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

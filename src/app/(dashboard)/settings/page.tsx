@@ -5,7 +5,7 @@ import { useTheme } from "next-themes";
 import toast from "react-hot-toast";
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useTheme();
+  const { theme: activeTheme, setTheme: setActiveTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -15,6 +15,7 @@ export default function SettingsPage() {
     dailyDigestTime: "08:00",
     defaultView: "month",
     weekStartsOn: 1,
+    theme: "system",
   });
 
   useEffect(() => {
@@ -30,13 +31,16 @@ export default function SettingsPage() {
             dailyDigestTime: data.dailyDigestTime || "08:00",
             defaultView: data.defaultView || "month",
             weekStartsOn: data.weekStartsOn ?? 1,
+            theme: data.theme || activeTheme || "system",
           });
-          if (data.theme) setTheme(data.theme);
+          if (data.theme && data.theme !== activeTheme) {
+             setActiveTheme(data.theme);
+          }
         }
       })
       .catch(() => toast.error("Error cargando ajustes"))
       .finally(() => setLoading(false));
-  }, [setTheme]);
+  }, [setActiveTheme, activeTheme]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,9 +49,10 @@ export default function SettingsPage() {
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...settings, theme }),
+        body: JSON.stringify(settings),
       });
       if (!res.ok) throw new Error();
+      setActiveTheme(settings.theme);
       toast.success("Ajustes guardados correctamente");
     } catch {
       toast.error("Error guardando ajustes");
@@ -130,8 +135,8 @@ export default function SettingsPage() {
             <div className="grid grid-cols-3 gap-4">
               <button
                 type="button"
-                onClick={() => setTheme("light")}
-                className={`p-4 rounded-xl border-2 text-center transition-all ${theme === "light" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"}`}
+                onClick={() => setSettings({ ...settings, theme: "light" })}
+                className={`p-4 rounded-xl border-2 text-center transition-all ${settings.theme === "light" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"}`}
               >
                 <div className="w-full h-12 bg-white rounded-lg border border-gray-200 mb-2 shadow-sm" />
                 <span className="text-sm font-medium">Claro</span>
@@ -139,8 +144,8 @@ export default function SettingsPage() {
               
               <button
                 type="button"
-                onClick={() => setTheme("dark")}
-                className={`p-4 rounded-xl border-2 text-center transition-all ${theme === "dark" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"}`}
+                onClick={() => setSettings({ ...settings, theme: "dark" })}
+                className={`p-4 rounded-xl border-2 text-center transition-all ${settings.theme === "dark" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"}`}
               >
                 <div className="w-full h-12 bg-[#111827] rounded-lg border border-gray-700 mb-2 shadow-sm" />
                 <span className="text-sm font-medium">Oscuro</span>
@@ -148,8 +153,8 @@ export default function SettingsPage() {
 
               <button
                 type="button"
-                onClick={() => setTheme("system")}
-                className={`p-4 rounded-xl border-2 text-center transition-all ${theme === "system" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"}`}
+                onClick={() => setSettings({ ...settings, theme: "system" })}
+                className={`p-4 rounded-xl border-2 text-center transition-all ${settings.theme === "system" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"}`}
               >
                 <div className="w-full h-12 bg-gradient-to-r from-white to-[#111827] rounded-lg border border-gray-300 mb-2 shadow-sm" />
                 <span className="text-sm font-medium">Sistema</span>
