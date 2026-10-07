@@ -186,16 +186,17 @@ export function TasksView() {
         ) : filteredTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-center">
             <CheckCircle2 className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-3" />
-            <p className="text-gray-500 dark:text-gray-400 font-medium">No hay tareas aquíí</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">¡Créa una nueva tarea para empezar!</p>
+            <p className="text-gray-500 dark:text-gray-400 font-medium">No hay tareas aquí</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">¡Crea una nueva tarea para empezar!</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             <AnimatePresence mode="popLayout">
               {filteredTasks.map(task => (
                 <motion.div
                   key={task.id}
                   layout
+                  className="w-full"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
