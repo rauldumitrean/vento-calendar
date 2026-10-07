@@ -46,8 +46,38 @@ export default function SchedulePage() {
     const timer = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
-  const currentDay = now.getDay();
-  const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  const currentDay = now.getDay() === 0 ? 7 : now.getDay();
+  const currentHour = now.getHours();
+  const currentMin = now.getMinutes();
+  const currentTotalMins = currentHour * 60 + currentMin;
+
+  const timeToMins = (t: string) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + (m || 0);
+  };
+
+  const isScheduleActive = (s: any) => {
+    const startMins = timeToMins(s.startTime);
+    const endMins = timeToMins(s.endTime);
+    
+    // Normalize dayOfWeek so Sunday is 7, like currentDay logic
+    const sDay = s.dayOfWeek === 0 ? 7 : s.dayOfWeek;
+
+    if (startMins <= endMins) {
+      return sDay === currentDay && currentTotalMins >= startMins && currentTotalMins <= endMins;
+    } else {
+      // Event spans midnight (e.g. 23:00 to 01:00)
+      if (sDay === currentDay) {
+        return currentTotalMins >= startMins;
+      }
+      
+      const nextDay = sDay === 7 ? 1 : sDay + 1;
+      if (currentDay === nextDay) {
+        return currentTotalMins <= endMins;
+      }
+      return false;
+    }
+  };
 
   const fetchSchedules = async () => {
     try {
@@ -265,7 +295,7 @@ export default function SchedulePage() {
                     .filter(s => s.dayOfWeek === day.id)
                     .sort((a, b) => a.startTime.localeCompare(b.startTime))
                     .map(s => {
-                      const isActive = s.dayOfWeek === currentDay && s.startTime <= currentTime && s.endTime >= currentTime;
+                      const isActive = isScheduleActive(s);
                       return (
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}

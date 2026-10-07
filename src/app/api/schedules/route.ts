@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { schedules } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -56,7 +56,7 @@ export async function DELETE(req: NextRequest) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "No ID" }, { status: 400 });
 
-    await db.delete(schedules).where(eq(schedules.id, id));
+    await db.delete(schedules).where(and(eq(schedules.id, id), eq(schedules.userId, session.user.id)));
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -83,8 +83,12 @@ export async function PUT(req: NextRequest) {
         location: location || null,
         color: color || "blue",
       })
-      .where(eq(schedules.id, id))
+      .where(and(eq(schedules.id, id), eq(schedules.userId, session.user.id)))
       .returning();
+
+    if (!schedule) {
+      return NextResponse.json({ error: "Not found or not authorized" }, { status: 404 });
+    }
 
     return NextResponse.json(schedule);
   } catch (error) {
