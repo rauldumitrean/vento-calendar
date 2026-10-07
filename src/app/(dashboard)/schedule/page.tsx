@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { UploadCloud, FileType, CheckCircle, Loader2, Plus, Sparkles, BookOpen, Trash2, X, Clock, MapPin, Image as ImageIcon } from "lucide-react";
+import { UploadCloud, FileType, CheckCircle, Loader2, Plus, Sparkles, BookOpen, Trash2, Pencil, X, Clock, MapPin, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 
@@ -29,6 +29,7 @@ export default function SchedulePage() {
 
   // Manual state
   const [manualForm, setManualForm] = useState({
+    id: "",
     title: "",
     dayOfWeek: "1",
     startTime: "09:00",
@@ -37,6 +38,16 @@ export default function SchedulePage() {
     color: "blue"
   });
   const [isSavingManual, setIsSavingManual] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // current time logic
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+  const currentDay = now.getDay();
+  const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
   const fetchSchedules = async () => {
     try {
@@ -140,10 +151,12 @@ export default function SchedulePage() {
 
     setIsSavingManual(true);
     try {
+      const isEdit = isEditMode && manualForm.id;
       const res = await fetch("/api/schedules", {
-        method: "POST",
+        method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...(isEdit && { id: manualForm.id }),
           title: manualForm.title,
           dayOfWeek: manualForm.dayOfWeek,
           startTime: manualForm.startTime,
@@ -154,8 +167,9 @@ export default function SchedulePage() {
       });
 
       if (res.ok) {
-        toast.success("¡Asignatura guardada!");
-        setManualForm(prev => ({ ...prev, title: "", location: "" }));
+        toast.success(isEdit ? "¡Asignatura actualizada!" : "¡Asignatura guardada!");
+        setManualForm(prev => ({ ...prev, id: "", title: "", location: "" }));
+        setIsEditMode(false);
         fetchSchedules();
         setIsManualModalOpen(false);
       } else {
@@ -166,6 +180,20 @@ export default function SchedulePage() {
     } finally {
       setIsSavingManual(false);
     }
+  };
+
+  const handleEditClick = (schedule: any) => {
+    setManualForm({
+      id: schedule.id,
+      title: schedule.title,
+      dayOfWeek: schedule.dayOfWeek.toString(),
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+      location: schedule.location || "",
+      color: schedule.color
+    });
+    setIsEditMode(true);
+    setIsManualModalOpen(true);
   };
 
   const days = [
@@ -196,7 +224,11 @@ export default function SchedulePage() {
         
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsManualModalOpen(true)}
+            onClick={() => {
+              setManualForm({ id: "", title: "", dayOfWeek: "1", startTime: "09:00", endTime: "10:30", location: "", color: "blue" });
+              setIsEditMode(false);
+              setIsManualModalOpen(true);
+            }}
             className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-xl transition shadow-sm font-medium"
           >
             <Plus className="w-5 h-5" />
@@ -232,32 +264,46 @@ export default function SchedulePage() {
                   schedules
                     .filter(s => s.dayOfWeek === day.id)
                     .sort((a, b) => a.startTime.localeCompare(b.startTime))
-                    .map(s => (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        key={s.id}
-                        className="group relative bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow border-l-4 overflow-hidden"
-                        style={{ borderLeftColor: `var(--color-${s.color}-500)` }}
-                      >
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => handleDelete(s.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <h4 className="font-bold text-gray-900 dark:text-white mb-1 pr-6 leading-tight">{s.title}</h4>
-                        <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 mb-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>{s.startTime} - {s.endTime}</span>
-                        </div>
-                        {s.location && (
-                          <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
-                            <MapPin className="w-3.5 h-3.5" />
-                            <span className="truncate">{s.location}</span>
+                    .map(s => {
+                      const isActive = s.dayOfWeek === currentDay && s.startTime <= currentTime && s.endTime >= currentTime;
+                      return (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          key={s.id}
+                          className={`group relative bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm hover:shadow-md transition-all border-l-4 overflow-hidden ${isActive ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-gray-900' : ''}`}
+                          style={{ borderLeftColor: `var(--color-${s.color}-500)` }}
+                        >
+                          <div className="absolute top-2 right-2 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleEditClick(s)} className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(s.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-                        )}
-                      </motion.div>
-                    ))
+                          <div className="flex items-center justify-between mb-1 pr-14">
+                            <h4 className="font-bold text-gray-900 dark:text-white leading-tight">{s.title}</h4>
+                          </div>
+                          {isActive && (
+                            <div className="mb-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-semibold">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                              En curso
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 mb-1">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{s.startTime} - {s.endTime}</span>
+                          </div>
+                          {s.location && (
+                            <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+                              <MapPin className="w-3.5 h-3.5" />
+                              <span className="truncate">{s.location}</span>
+                            </div>
+                          )}
+                        </motion.div>
+                      );
+                    })
                 )}
                 
                 {!loading && schedules.filter(s => s.dayOfWeek === day.id).length === 0 && (
@@ -376,7 +422,7 @@ export default function SchedulePage() {
                 <X className="w-6 h-6" />
               </button>
               
-              <h2 className="text-2xl font-bold mb-6">Añadir Asignatura</h2>
+              <h2 className="text-2xl font-bold mb-6">{isEditMode ? "Editar Asignatura" : "Añadir Asignatura"}</h2>
               
               <form onSubmit={handleManualSubmit} className="space-y-5">
                 <div>
