@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Filter, CheckCircle2, Circle, Clock, AlertCircle } from "lucide-react";
+import { Plus, Filter, CheckCircle2, Circle, Clock, AlertCircle, Eye, EyeOff } from "lucide-react";
 import type { Task, TaskPriority, TaskStatus } from "@/types";
 import { TaskItem } from "./TaskItem";
 import { TaskModal } from "./TaskModal";
@@ -25,6 +25,7 @@ export function TasksView() {
   const [statusFilter, setStatusFilter] = useState<"all" | TaskStatus>("all");
   const [showModal, setShowModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showCompleted, setShowCompleted] = useState(true);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -47,7 +48,11 @@ export function TasksView() {
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
-  const filteredTasks = tasks.filter(t => statusFilter === "all" || t.status === statusFilter);
+  const filteredTasks = tasks.filter(t => {
+    if (statusFilter !== "all" && t.status !== statusFilter) return false;
+    if (!showCompleted && t.status === "done") return false;
+    return true;
+  });
 
   const handleSave = async (data: Partial<Task>) => {
     try {
@@ -132,21 +137,31 @@ export function TasksView() {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {STATUS_FILTERS.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setStatusFilter(key)}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition",
-                statusFilter === key
-                  ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-              )}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="flex justify-between items-center gap-4 overflow-x-auto pb-1">
+          <div className="flex gap-2">
+            {STATUS_FILTERS.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setStatusFilter(key)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition",
+                  statusFilter === key
+                    ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setShowCompleted(!showCompleted)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition whitespace-nowrap"
+          >
+            {showCompleted ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            {showCompleted ? "Ocultar completadas" : "Mostrar completadas"}
+          </button>
         </div>
       </div>
 
@@ -170,7 +185,7 @@ export function TasksView() {
         ) : filteredTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-center">
             <CheckCircle2 className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-3" />
-            <p className="text-gray-500 dark:text-gray-400 font-medium">No hay tareas aquí</p>
+            <p className="text-gray-500 dark:text-gray-400 font-medium">No hay tareas aquíí</p>
             <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">¡Créa una nueva tarea para empezar!</p>
           </div>
         ) : (
