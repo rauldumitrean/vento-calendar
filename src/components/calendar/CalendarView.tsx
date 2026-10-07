@@ -134,6 +134,7 @@ export function CalendarView() {
   const lastWheelTime = useRef<number>(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (view === "year") return;
     if (Math.abs(e.deltaY) <= 20) return;
     
     const target = e.currentTarget;
@@ -200,6 +201,7 @@ export function CalendarView() {
   };
 
   const onTouchEndHandler = () => {
+    if (view === "year") return;
     if (!touchStart || !touchEnd) return;
     const distanceX = touchStart.x - touchEnd.x;
     const distanceY = touchStart.y - touchEnd.y;

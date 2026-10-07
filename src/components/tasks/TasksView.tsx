@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Filter, CheckCircle2, Circle, Clock, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Task, TaskPriority, TaskStatus } from "@/types";
 import { TaskItem } from "./TaskItem";
 import { TaskModal } from "./TaskModal";
@@ -190,14 +191,24 @@ export function TasksView() {
           </div>
         ) : (
           <div className="space-y-2">
-            {filteredTasks.map(task => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onToggle={handleToggle}
-                onEdit={() => { setSelectedTask(task); setShowModal(true); }}
-              />
-            ))}
+            <AnimatePresence mode="popLayout">
+              {filteredTasks.map(task => (
+                <motion.div
+                  key={task.id}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <TaskItem
+                    task={task}
+                    onToggle={handleToggle}
+                    onEdit={() => { setSelectedTask(task); setShowModal(true); }}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
