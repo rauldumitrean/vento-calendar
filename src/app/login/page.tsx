@@ -38,10 +38,10 @@ export default function AuthPage() {
 
   // Password Strength
   const passReqs = {
-    length: regPassword.length >= 6,
+    minLength: regPassword.length >= 6,
     uppercase: /[A-Z]/.test(regPassword),
     number: /[0-9]/.test(regPassword),
-    symbol: /[^A-Za-z0-9]/.test(regPassword)
+    symbol: /[^A-Za-z0-9\s]/.test(regPassword)
   };
   const score = Object.values(passReqs).filter(Boolean).length;
   let barColor = "bg-gray-200";
@@ -50,6 +50,7 @@ export default function AuthPage() {
     else if (score === 3) barColor = "bg-yellow-500";
     else if (score === 4) barColor = "bg-green-500";
   }
+  const displayScore = regPassword.length > 0 ? Math.max(1, score) : 0;
   const isRegisterValid = score === 4 && regName.length > 0 && regEmail.length > 0;
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -156,14 +157,14 @@ export default function AuthPage() {
               {/* Strength Meter */}
               <div className="flex gap-1 mb-2 h-1.5">
                 {[1, 2, 3, 4].map((level) => (
-                  <div key={level} className={`h-full flex-1 rounded-full transition-colors duration-300 ${score >= level ? barColor : 'bg-gray-200'}`} />
+                  <div key={level} className={`h-full flex-1 rounded-full transition-colors duration-300 ${displayScore >= level ? barColor : 'bg-gray-200'}`} />
                 ))}
               </div>
               
               <div className="grid grid-cols-2 gap-2 mt-3">
                 <div className="flex items-center gap-1.5">
-                  {passReqs.length ? <Check className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-gray-400" />}
-                  <span className={`text-[11px] ${passReqs.length ? 'text-green-600' : 'text-gray-500'}`}>Mínimo 6 caracteres</span>
+                  {passReqs.minLength ? <Check className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-gray-400" />}
+                  <span className={`text-[11px] ${passReqs.minLength ? 'text-green-600' : 'text-gray-500'}`}>Mínimo 6 caracteres</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   {passReqs.uppercase ? <Check className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-gray-400" />}
