@@ -336,7 +336,7 @@ export default function AuthPage() {
 
           {/* Footer */}
           <div className="relative text-[11px] text-white/50 font-medium tracking-wide">
-            Acceso seguro · Siempre sincronizado
+            Acceso seguro - Siempre sincronizado
           </div>
         </motion.div>
 
