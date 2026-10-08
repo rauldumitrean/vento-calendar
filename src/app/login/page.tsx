@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Eye, EyeOff, Sparkles, ShieldCheck, Loader2 } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Sparkles, ShieldCheck, Loader2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const GoogleIcon = () => (
@@ -35,6 +35,22 @@ export default function AuthPage() {
   const [regPassword, setRegPassword] = useState("");
   const [showRegPass, setShowRegPass] = useState(false);
   const [regLoading, setRegLoading] = useState(false);
+
+  // Password Strength
+  const passReqs = {
+    length: regPassword.length >= 6,
+    uppercase: /[A-Z]/.test(regPassword),
+    number: /[0-9]/.test(regPassword),
+    symbol: /[^A-Za-z0-9]/.test(regPassword)
+  };
+  const score = Object.values(passReqs).filter(Boolean).length;
+  let barColor = "bg-gray-200";
+  if (regPassword.length > 0) {
+    if (score <= 2) barColor = "bg-red-500";
+    else if (score === 3) barColor = "bg-yellow-500";
+    else if (score === 4) barColor = "bg-green-500";
+  }
+  const isRegisterValid = score === 4 && regName.length > 0 && regEmail.length > 0;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,16 +145,42 @@ export default function AuthPage() {
             </div>
             <div>
               <label className="block text-[11px] font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Contraseña</label>
-              <div className="relative">
-                 <input required type={showRegPass ? "text" : "password"} value={regPassword} onChange={e=>setRegPassword(e.target.value)} placeholder="Mínimo 6 caracteres" minLength={6}
+              <div className="relative mb-3">
+                 <input required type={showRegPass ? "text" : "password"} value={regPassword} onChange={e=>setRegPassword(e.target.value)} placeholder="Introduce tu contraseña" 
                    className="w-full pl-4 pr-12 py-3 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#6919FF] focus:ring-2 focus:ring-purple-200 outline-none transition-all text-sm" />
                  <button type="button" onClick={()=>setShowRegPass(!showRegPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                    {showRegPass ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
                  </button>
               </div>
+              
+              {/* Strength Meter */}
+              <div className="flex gap-1 mb-2 h-1.5">
+                {[1, 2, 3, 4].map((level) => (
+                  <div key={level} className={`h-full flex-1 rounded-full transition-colors duration-300 ${score >= level ? barColor : 'bg-gray-200'}`} />
+                ))}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                <div className="flex items-center gap-1.5">
+                  {passReqs.length ? <Check className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-gray-400" />}
+                  <span className={`text-[11px] ${passReqs.length ? 'text-green-600' : 'text-gray-500'}`}>Mínimo 6 caracteres</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {passReqs.uppercase ? <Check className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-gray-400" />}
+                  <span className={`text-[11px] ${passReqs.uppercase ? 'text-green-600' : 'text-gray-500'}`}>Al menos una mayúscula</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {passReqs.number ? <Check className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-gray-400" />}
+                  <span className={`text-[11px] ${passReqs.number ? 'text-green-600' : 'text-gray-500'}`}>Al menos un número</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {passReqs.symbol ? <Check className="w-3.5 h-3.5 text-green-500" /> : <X className="w-3.5 h-3.5 text-gray-400" />}
+                  <span className={`text-[11px] ${passReqs.symbol ? 'text-green-600' : 'text-gray-500'}`}>Al menos un símbolo</span>
+                </div>
+              </div>
             </div>
 
-            <button disabled={regLoading} type="submit" className="w-full py-3.5 mt-2 bg-[#6919FF] hover:bg-[#5811DE] text-white rounded-xl font-semibold flex justify-center items-center gap-2 transition-all shadow-md hover:shadow-lg hover:shadow-purple-500/25">
+            <button disabled={regLoading || !isRegisterValid} type="submit" className="w-full py-3.5 mt-2 bg-[#6919FF] hover:bg-[#5811DE] disabled:bg-gray-300 disabled:text-gray-500 text-white rounded-xl font-semibold flex justify-center items-center gap-2 transition-all shadow-md hover:shadow-lg hover:shadow-purple-500/25 disabled:shadow-none">
               {regLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Siguiente <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
@@ -212,8 +254,8 @@ export default function AuthPage() {
             ========================================================================= */}
         <motion.div
           initial={false}
-          animate={{ x: isLogin ? "0%" : "100%", scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 200, damping: 25, duration: 0.4 }}
+          animate={{ x: isLogin ? "0%" : "100%" }}
+          transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
           className="hidden md:flex absolute top-0 left-0 w-1/2 h-full bg-[#6919FF] z-20 flex-col p-12 text-white overflow-hidden shadow-2xl"
         >
           {/* Decorative background gradients */}
@@ -230,23 +272,27 @@ export default function AuthPage() {
 
           {/* Center visual */}
           <div className="relative flex-1 flex flex-col justify-center items-center">
-            <div className="w-56 h-36 rounded-3xl border border-white/20 bg-white/5 backdrop-blur-md flex items-center justify-center relative mb-12 shadow-xl">
+            <motion.div 
+               animate={{ scale: isLogin ? 1 : 1.05, rotate: isLogin ? 0 : 5 }}
+               transition={{ type: "spring", bounce: 0.3, duration: 0.8 }}
+               className="w-56 h-36 rounded-3xl border border-white/20 bg-white/5 backdrop-blur-md flex items-center justify-center relative mb-12 shadow-xl"
+            >
                <Sparkles className="w-14 h-14 text-white opacity-90" strokeWidth={1.5} />
                <div className="absolute -bottom-4 right-6 bg-white/20 backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/30 flex items-center gap-2 text-xs font-semibold shadow-lg">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   IA de Calendario
                </div>
-            </div>
+            </motion.div>
             
             <div className="w-full relative h-[180px]">
               <AnimatePresence mode="wait">
                 {isLogin ? (
                   <motion.div
                     key="login-view"
-                    initial={{ opacity: 0, x: -30 }}
+                    initial={{ opacity: 0, x: -40 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 30 }}
-                    transition={{ duration: 0.3 }}
+                    exit={{ opacity: 0, x: 40 }}
+                    transition={{ type: "spring", bounce: 0.1, duration: 0.6 }}
                     className="absolute inset-0 flex flex-col"
                   >
                     <h3 className="text-[10px] font-bold tracking-[0.2em] text-white/70 mb-3 uppercase">Bienvenido de vuelta</h3>
@@ -264,10 +310,10 @@ export default function AuthPage() {
                 ) : (
                   <motion.div
                     key="register-view"
-                    initial={{ opacity: 0, x: 30 }}
+                    initial={{ opacity: 0, x: 40 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -30 }}
-                    transition={{ duration: 0.3 }}
+                    exit={{ opacity: 0, x: -40 }}
+                    transition={{ type: "spring", bounce: 0.1, duration: 0.6 }}
                     className="absolute inset-0 flex flex-col"
                   >
                     <h3 className="text-[10px] font-bold tracking-[0.2em] text-white/70 mb-3 uppercase">¿Ya tienes cuenta?</h3>
